@@ -1,0 +1,1267 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Schloss &amp; Gut Liebenberg · 3D-Spaziergang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --gruen:#6B7A3E; --gruen-logo:#6b7525; --gold:#B8924A; --blau:#1E3560; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none;-webkit-user-select:none;user-select:none;background:#0d0f0a;font-family:"Source Sans 3",Arial,sans-serif;color:#2a2a26}
+  #app{position:fixed;inset:0} canvas{display:block}
+  .hud{position:absolute;pointer-events:none;user-select:none}
+  #topleft{top:16px;left:16px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.82);
+    backdrop-filter:blur(4px);padding:10px 14px;border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.18)}
+  #topleft svg{width:34px;height:34px;display:block}
+  #counter{font-weight:700;color:var(--gruen);font-size:15px;line-height:1.1}
+  #counter small{display:block;font-weight:400;color:#7a7a70;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+  #minimap{top:74px;left:16px;width:160px;height:160px;border-radius:12px;background:rgba(255,255,255,.8);
+    backdrop-filter:blur(4px);box-shadow:0 6px 22px rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.5)}
+  #topright{top:16px;right:16px;text-align:right;background:rgba(30,53,96,.72);color:#fff;padding:8px 12px;
+    border-radius:10px;font-size:13px;box-shadow:0 6px 22px rgba(0,0,0,.18)}
+  #topright span{opacity:.75;font-size:11px}
+  #hint{bottom:22px;left:50%;transform:translateX(-50%);text-align:center;background:rgba(255,255,255,.86);
+    padding:10px 18px;border-radius:30px;font-size:13.5px;color:#3a3a34;box-shadow:0 6px 22px rgba(0,0,0,.16);
+    transition:opacity .8s;line-height:1.4}
+  #hint kbd{display:inline-block;background:var(--gruen);color:#fff;border-radius:6px;padding:1px 7px;
+    font-family:inherit;font-weight:600;font-size:12px;margin:0 1px}
+  #prompt{left:50%;top:56%;transform:translate(-50%,-50%);text-align:center;opacity:0;transition:opacity .18s}
+  #prompt .k{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;background:var(--gold);
+    color:#fff;font-weight:700;font-size:20px;border-radius:9px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+  #prompt .t{margin-top:8px;color:#fff;font-size:13px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+  #talkPrompt{left:50%;top:56%;transform:translate(-50%,-50%);text-align:center;opacity:0;transition:opacity .18s}
+  #talkPrompt .k{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;background:var(--gruen);
+    color:#fff;font-weight:700;font-size:20px;border-radius:9px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+  #talkPrompt .t{margin-top:8px;color:#fff;font-size:13px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+  #talk{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);z-index:31;width:min(520px,92vw);
+    max-height:86vh;overflow:auto;background:#fff;border-radius:16px;opacity:0;pointer-events:none;transition:.18s;
+    box-shadow:0 24px 70px rgba(0,0,0,.45)}
+  #talk.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+  #talk .band{height:6px;background:var(--gruen)}
+  #talk .body{padding:22px 26px 22px}
+  #talk .who{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  #talk .who .av{width:40px;height:40px;border-radius:50%;background:var(--gruen);flex:0 0 40px;
+    box-shadow:inset 0 -8px 0 rgba(0,0,0,.12)}
+  #talk .who b{display:block;font-size:17px;color:var(--blau)}
+  #talk .who small{color:#8a8a80;font-size:12px;letter-spacing:.04em}
+  #talk .kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  #talk .txt{font-weight:300;font-size:15.5px;line-height:1.68;color:#3a3a34;min-height:84px}
+  #talkTopics{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  #talkTopics button{cursor:pointer;border:1px solid #d8d6cc;background:#f7f6f1;color:#3a3a34;font-family:inherit;
+    font-size:13.5px;padding:8px 14px;border-radius:30px;transition:.12s}
+  #talkTopics button:hover{background:var(--gruen);color:#fff;border-color:var(--gruen)}
+  #talkTopics button.on{background:var(--gruen);color:#fff;border-color:var(--gruen)}
+  #talkTopics button i{font-style:normal;opacity:.55;margin-right:6px}
+  #talk .close{margin-top:20px;cursor:pointer;border:0;background:var(--blau);color:#fff;font-family:inherit;
+    font-weight:600;font-size:14px;padding:10px 22px;border-radius:30px}
+  #crosshair{left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:rgba(255,255,255,.6);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+  #toast{top:78px;left:50%;transform:translateX(-50%) translateY(-14px);opacity:0;transition:.4s;background:var(--gruen);
+    color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;box-shadow:0 8px 26px rgba(0,0,0,.28);text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)} #toast b{color:#f2e6c8}
+  .screen{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;z-index:20}
+  #loader{background:radial-gradient(120% 120% at 50% 30%,#7c8a4a 0%,var(--gruen) 55%,#525d2e 100%);color:#fff}
+  #loader .logo svg{width:112px;height:112px;filter:drop-shadow(0 4px 18px rgba(0,0,0,.35))}
+  #loader h1{font-weight:300;font-size:14px;letter-spacing:.34em;text-transform:uppercase;margin:20px 0 4px;opacity:.9}
+  #loader .name{font-weight:600;letter-spacing:.02em;font-size:19px;margin-bottom:18px}
+  .bar{width:230px;height:4px;border-radius:3px;background:rgba(255,255,255,.25);margin:0 auto;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:#fff;transition:width .25s}
+  .startbtn{margin-top:24px;pointer-events:auto;cursor:pointer;border:0;background:#fff;color:var(--gruen);font-family:inherit;
+    font-weight:700;font-size:15px;padding:13px 34px;border-radius:40px;box-shadow:0 8px 26px rgba(0,0,0,.3);transition:transform .12s;opacity:0}
+  .startbtn:hover{transform:translateY(-2px)}
+  .foot{position:absolute;bottom:22px;left:0;right:0;font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.7;font-weight:300}
+  #pause{background:rgba(20,24,14,.72);backdrop-filter:blur(6px);color:#fff;display:none;flex-direction:column;gap:6px}
+  #pause h2{font-weight:300;letter-spacing:.2em;text-transform:uppercase;font-size:20px}
+  #pause p{opacity:.75;font-size:13.5px;max-width:360px;line-height:1.6}
+  #pause .startbtn{opacity:1;color:var(--gruen)}
+  .keys{display:flex;gap:20px;margin:14px 0 4px;opacity:.9;font-size:12.5px;flex-wrap:wrap;justify-content:center}
+  .keys div b{display:block;font-size:15px;margin-bottom:2px}
+  #info{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);z-index:30;width:min(440px,88vw);
+    background:#fff;border-radius:16px;overflow:hidden;opacity:0;pointer-events:none;transition:.18s;box-shadow:0 24px 70px rgba(0,0,0,.4)}
+  #info.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+  #info .band{height:6px;background:var(--gold)}
+  #info .body{padding:26px 28px 24px}
+  #info .kicker{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  #info h3{font-size:23px;font-weight:700;color:var(--blau);margin:6px 0 12px;line-height:1.15}
+  #info .txt{font-weight:300;font-size:15.5px;line-height:1.65;color:#3a3a34}
+  #info .close{margin-top:20px;cursor:pointer;border:0;background:var(--gruen);color:#fff;font-family:inherit;font-weight:600;font-size:14px;padding:10px 22px;border-radius:30px}
+  /* ---------- Touch-Bedienung ---------- */
+  #touch{display:none}
+  body.touch #touch{display:block}
+  body.touch #crosshair{opacity:.35}
+  #stick{position:absolute;left:18px;bottom:22px;width:132px;height:132px;border-radius:50%;
+    background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.4);backdrop-filter:blur(3px);
+    touch-action:none;z-index:12}
+  #knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;
+    background:rgba(255,255,255,.85);box-shadow:0 3px 12px rgba(0,0,0,.3);pointer-events:none}
+  #tbtns{position:absolute;right:16px;bottom:22px;display:grid;grid-template-columns:repeat(2,64px);gap:10px;z-index:12}
+  #tbtns button{width:64px;height:64px;border-radius:50%;border:1.5px solid rgba(255,255,255,.45);
+    background:rgba(30,53,96,.55);color:#fff;font-family:inherit;font-weight:700;font-size:13px;
+    backdrop-filter:blur(3px);touch-action:none;-webkit-tap-highlight-color:transparent;line-height:1.15}
+  #tbtns button small{display:block;font-weight:400;font-size:9.5px;opacity:.8}
+  #tbtns button.act{background:var(--gruen)}
+  #tbtns button.hot{background:var(--gold);border-color:#fff}
+  /* ---------- schmale Bildschirme ---------- */
+  @media (max-width:820px){
+    #minimap{width:104px;height:104px;top:60px;left:10px}
+    #topleft{top:10px;left:10px;padding:6px 9px;gap:8px;border-radius:10px}
+    #topleft svg{width:24px;height:24px}
+    #counter{font-size:12.5px} #counter small{font-size:9px}
+    #topright{top:10px;right:10px;font-size:11px;padding:6px 9px}
+    #hint{display:none}
+    #info,#talk{width:94vw}
+    #talk .body{padding:18px 18px 18px} #info .body{padding:20px 20px 18px}
+    #talk .txt,#info .txt{font-size:14.5px;line-height:1.6}
+    #info h3{font-size:20px}
+    #prompt,#talkPrompt{top:42%}
+    #prompt .t,#talkPrompt .t{font-size:12px}
+    #loader .logo svg{width:84px;height:84px}
+    #loader .name{font-size:17px}
+  }
+  @media (max-height:520px){ #minimap{display:none} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="crosshair" class="hud"></div>
+<div id="topleft" class="hud"><span id="logoslot"></span><span id="counter">1&nbsp;/&nbsp;13<small>Entdeckt</small></span></div>
+<canvas id="minimap" class="hud" width="320" height="320"></canvas>
+<div id="topright" class="hud"><b id="presetName">Goldene Stunde</b><br><span>T · Tageszeit wechseln</span></div>
+<div id="prompt" class="hud"><div class="k">E</div><div class="t" id="promptText">Infotafel lesen</div></div>
+<div id="toast" class="hud"></div>
+<div id="talkPrompt" class="hud"><div class="k">F</div><div class="t">Mit dem Gutsführer sprechen</div></div>
+<div id="talk"><div class="band"></div><div class="body">
+  <div class="who"><span class="av"></span><span><b id="talkName">Der Gutsführer</b><small id="talkWhere"></small></span></div>
+  <div class="txt" id="talkText"></div>
+  <div class="kicker" style="margin-top:18px">Worüber möchten Sie mehr hören?</div>
+  <div id="talkTopics"></div>
+  <button class="close" id="talkClose">Gespräch beenden</button></div></div>
+<div id="hint" class="hud"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> gehen · Maus schauen · <kbd>Shift</kbd> rennen · <kbd>Space</kbd> springen · <kbd>E</kbd> Infotafel · <kbd>F</kbd> Gutsführer ansprechen</div>
+<div id="info"><div class="band"></div><div class="body">
+  <div class="kicker" id="infoKicker"></div><h3 id="infoTitle"></h3><div class="txt" id="infoText"></div>
+  <button class="close" id="infoClose">Weiter erkunden</button></div></div>
+<div id="loader" class="screen"><div>
+  <div class="logo" id="logoBig"></div><h1>Ein Spaziergang durch</h1><div class="name">Schloss &amp; Gut Liebenberg</div>
+  <div class="bar"><i id="barFill"></i></div><button class="startbtn" id="startBtn">Am Kaiserbrunnen starten</button>
+  <div class="foot">Ein Wirkungsort der DKB Stiftung</div></div></div>
+<div id="pause" class="screen"><h2>Pause</h2>
+  <div class="keys"><div><b>WASD</b>Gehen</div><div><b>Maus</b>Umsehen</div><div><b>Shift</b>Rennen</div><div><b>Space</b>Springen</div><div><b>E</b>Infotafel</div><div><b>F</b>Gutsführer</div><div><b>T</b>Tageszeit</div></div>
+  <p>Klick zurück in den Park. Mit <b>Esc</b> hältst du jederzeit an.</p><button class="startbtn" id="resumeBtn">Zurück in den Park</button></div>
+<div id="touch">
+  <div id="stick"><div id="knob"></div></div>
+  <div id="tbtns">
+    <button id="btnF">F<small>Führer</small></button>
+    <button id="btnE">E<small>Infotafel</small></button>
+    <button id="btnRun">Lauf<small>schneller</small></button>
+    <button id="btnT">T<small>Tageszeit</small></button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ==========================================================================
+   Schloss & Gut Liebenberg – begehbarer 3D-Park (stilisiert, nach Grundriss
+   und Originalfotos). Three.js r128. Start: Kaiserbrunnen mit Blick aufs Schloss.
+   Koordinaten: +X Osten, +Z Süden (Park), -Z Norden (Ehrenhof/Kirche).
+   ========================================================================== */
+
+const SGL_LOGO = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 104.07 90.14"><defs><style>.cls-1{fill:none;}.cls-3{clip-path:url(#sglclip__UID__);}</style><clipPath id="sglclip__UID__"><rect class="cls-1" x="2.62" y="0" width="90.73" height="57"/></clipPath></defs><g class="cls-3"><path fill="COL" d="M51.02,41.68h2.02v3.4h-2.02v-3.4h0ZM50.64,45.85h2.79c.21,0,.38-.17.38-.38h0v-4.17c0-.21-.17-.38-.38-.38h-2.79c-.21,0-.38.17-.38.38h0v4.17c0,.21.17.38.38.38h0Z"/><path fill="COL" d="M69.75,38.11l-.94-.82v-.1h5.23c.21,0,.38-.17.38-.38h0v-5.49h5.97v5.49c0,.21.17.38.38.38h.03s2.5,0,2.5,0c-.24.34-.51.65-.81.92h-12.75ZM81.15,40.13c-.05.42-.1.66-.37.87-.55.43-.5,1.21-.46,1.98.08.5.04,1.02-.13,1.5-.39.74-.48,1.6-.25,2.4.09.48.14.96.15,1.45-.06.69-.42,1.32-.99,1.72-.35.29-.64.64-.87,1.04-.24.57-.38,1.17-.41,1.79-.09.93-.17,1.2-.49,1.21-1.28.06-2.02,1.74-2.18,2.15h-5.18v-17.35h11.63c-.28.36-.44.8-.46,1.25h0ZM69.22,56.23h-4.68v-17.38l1.12-1.12c.07-.07.11-.17.11-.27v-.65c0-.21-.17-.38-.38-.38h-.9v-4.17h4.32v4.16h-.38c-.21,0-.38.17-.38.38h0v.66c0,.11.05.22.13.29l1.05.92v17.56h0ZM40.49,38.29l-.99-.99v-.1h9.16c.21,0,.38-.17.38-.38h0v-5.4h5.97v5.4c0,.21.17.38.38.38h9.61v.1l-.99.99h-23.52ZM63.77,47.53h-23.04v-8.47h23.04v8.47h0ZM63.77,56.23h-1.87v-3.59c0-1.63-1.32-2.95-2.95-2.95-1.63,0-2.94,1.32-2.95,2.95v3.6h-1.04v-3.6c0-1.63-1.32-2.95-2.95-2.95-1.63,0-2.94,1.32-2.95,2.95v3.6h-1.04v-3.6c0-1.63-1.32-2.95-2.95-2.95-1.63,0-2.94,1.32-2.95,2.95v3.6h-1.42v-7.93h23.04v7.92h0ZM61.13,56.23h-4.36v-3.59c0-1.2.98-2.18,2.18-2.18,1.2,0,2.18.98,2.18,2.18v3.59h0ZM54.2,56.23h-4.36v-3.59c0-1.2.98-2.18,2.18-2.18,1.2,0,2.18.98,2.18,2.18v3.59h0ZM47.27,56.23h-4.36v-3.59c0-1.2.98-2.18,2.18-2.18,1.2,0,2.18.98,2.18,2.18v3.59h0ZM39.96,56.23h-4.32v-16.83l.82-1.43c.03-.06.05-.12.05-.19v-.76c.01-.13-.05-.25-.15-.32l-.77-.55v-3.9s4.31,0,4.31,0v4.17h-.8c-.21,0-.38.17-.38.38h0v.65c0,.1.04.2.11.27l1.12,1.12v17.38h0ZM27.89,37.34v-1.5l.27-.81,6.89,1.68.7.5v.45s-.69,1.19-.69,1.19l-7.17-1.52h0ZM34.87,56.23h-3.12c-.16-.11-.08-.94-.02-1.5.05-.47.1-.99.11-1.54.17-1.24-.51-2.44-1.67-2.92-1.24-.48-1.79-1.04-1.73-1.77.11-.68-.1-1.37-.56-1.88v-8.49l6.98,1.48v16.63h0ZM21.04,29.94v-1.16c0-.21-.17-.38-.38-.38h-2.26v-.64h12.04l2.52,3.07v4.59l-4.93-1.2-7-4.27h0ZM21.04,34.18v-3.35l5.48,3.35h-5.48ZM27.14,35.66s-.02.08-.02.12v1.49H9.6c-.09-.67-.51-1.26-1.12-1.56-.4-.17-.76-.43-1.05-.75h4.18c.21,0,.38-.17.38-.38h0v-5.41h8.29v5.35c0,.06.02.13.05.18.05.16.19.27.36.27h6.7l-.24.7h0ZM27.12,46.13c-.17-.07-.35-.12-.53-.15-.69-.13-.87-1.42-1-2.36l-.05-.32-.08-.66c-.03-.78-.28-1.53-.73-2.17-.77-.91-1.98-1.32-3.15-1.08-1.08.08-2,.78-2.37,1.8-.16.49-.24,1.01-.25,1.53.01.34-.07.68-.24.97-.13.14-.29.26-.46.34-.63.31-1.12.85-1.35,1.51-.08.29-.14.59-.16.89-.05.45-.06.58-.73.93-.21.11-.38.2-.51.29.04-.27.1-.53.19-.79.18-.52.27-1.07.28-1.62,0-1.23-1.56-2.15-2.7-2.83l-.07-.04c-.26-.15-.38-.64-.5-1.1-.17-.67-.36-1.43-1.05-1.73-.26-.11-.53-.21-.81-.29-.52-.16-.76-.23-.96-.73-.06-.16-.11-.32-.14-.48h17.37v8.09h0ZM6.97,33.79c-.05-.34-.15-.68-.28-1l4.52-2.02v3.41h-4.16l-.08-.39h0ZM14.61,25.78h3.03v2.61h-3.03v-2.61h0ZM16.15,23.9l.5,1.11h-1.02l.52-1.11h0ZM35.6,29.17l-.23,1.06-.89,1.44c-.07.12-.08.27-.01.39.07.12.2.2.34.2h.02v3.61s-1.09-.27-1.09-.27v-4.92c0-.09-.03-.18-.09-.24l-1.04-1.26h2.99ZM36.06,30.58s.04-.08.05-.12l1.33-6.08h.61l1.33,6.08s.03.08.05.12l.56.9h-4.5l.56-.9h0ZM49.5,29.24l-1.01,1.46c-.13.06-.21.2-.21.34v5.4h-7.59v-4.17h.01c.14,0,.27-.08.34-.2.07-.12.06-.27-.01-.39l-.89-1.44-.22-1h9.59ZM51.98,27.03l2.6,3.62h-5.12l2.52-3.62h0ZM64.49,29.24l-.22,1-.89,1.44c-.07.12-.08.27-.01.39.07.12.2.2.34.2h.02v4.17h-7.95v-5.4c0-.15-.09-.29-.23-.35l-1.04-1.44h9.98ZM62,26.51l1.91-1.91s.08-.11.1-.18l3.9-15.85,3.9,15.85c.02.07.05.13.1.18l1.91,1.91-.9.9c-.07.07-.11.17-.11.27v.79h-4.18l-.79-3.59h1.13c.21,0,.38-.17.38-.38h0v-4.09c0-.05-.01-.11-.04-.16h0s-1.16-2.41-1.16-2.41c-.06-.13-.19-.22-.34-.22-.14,0-.28.08-.35.21l-1.25,2.4v.02s-.02.03-.02.03c-.02.04-.03.09-.03.13v3.2h-.16c-.18,0-.34.12-.38.3l-1,4.56h-1.64v-.79c0-.1-.04-.2-.11-.27l-.89-.9h0ZM63.07,18.83h1.54l-1.23,4.99h-.31v-4.99h0ZM67.34,5.67c0-.33.27-.6.6-.6s.6.27.6.6-.27.6-.6.6c-.33,0-.6-.27-.6-.6h0s0,0,0,0h0ZM72.82,18.83v4.99h-.36l-1.23-4.99h1.58ZM67.96,28.99h0s.32,1.47.32,1.47c0,.04.03.08.05.12l.56.9h-4.5l.56-.9s.04-.08.05-.12l1.33-6.08h.61l1.01,4.61h0ZM67.21,20.02l.6-1.16.56,1.16h-1.16ZM68.59,20.79v3.32h-.91l-.04-.2c-.04-.18-.2-.3-.38-.3h-.3v-2.82h1.63ZM74.77,29.24l-1.03,1.48-.02.04s-.02.05-.03.07c0,.02-.01.05-.02.08v.04s0,5.48,0,5.48h-4.08v-4.16h.01c.14,0,.27-.08.34-.2.07-.12.06-.27,0-.39l-.89-1.44-.22-1h5.96ZM75.76,29.16c.07-.05.11-.12.14-.2l1.36-1.95,2.75,3.54h-5.21l.97-1.39h0ZM84.67,29.24c-.39.62-.43,1.4-.1,2.05.67,1.66.48,2.04.21,2.63l-.21.47-.19.53c-.16.51-.36,1.01-.6,1.49h-2.6v-5.48s0-.03,0-.05c0-.03,0-.05-.01-.08,0-.03-.02-.05-.04-.07,0-.01-.01-.03-.02-.04l-1.14-1.47h4.71ZM68.33,1.03c.33.18.79.44,1.28.73.32.19.68.31,1.05.35-.37.04-.74.03-1.11-.04-.41-.06-.82-.06-1.23,0v-1.04h0ZM85.1,35.18l.18-.51.19-.42c.38-.79.55-1.41-.19-3.25-.37-.91-.22-1.52,1.6-2.7,2.05-1.33,2.84-.68,3.76.07.61.65,1.49.99,2.38.9.21-.03.35-.23.32-.44,0,0,0,0,0,0-.03-.21-.23-.35-.44-.32,0,0,0,0,0,0-.72.12-1.18-.26-1.77-.74-.96-.78-2.15-1.75-4.67-.12-.39.25-.77.53-1.13.83-.03,0-.06-.01-.09-.02h-5.77s-.07,0-.11.02l-1.83-2.36c-.08-.09-.19-.15-.31-.15-.12,0-.24.06-.31.16l-1.62,2.32h-1.71v-.63l1.06-1.06c.15-.15.15-.39,0-.54l-1.66-1.66h.21c.21,0,.38-.17.38-.38h0v-5.75c0-.21-.17-.38-.38-.38h-2.16l-2.72-11.08c.59-.16,1-.7,1-1.31,0-.61-.4-1.14-.99-1.31v-1.51c.36-.08.73-.09,1.1-.03,2.5.44,3.16-1.1,3.19-1.16.06-.14.02-.31-.09-.42-.11-.11-.28-.14-.42-.08-.68.27-1.44.25-2.1-.07-1.02-.59-1.86-1.04-1.87-1.05-.19-.1-.42-.03-.52.16,0,.01,0,.02,0,.03,0,.02-.02.04-.02.07,0,.02,0,.04-.01.06,0,.01,0,.02,0,.04v3.96c-.58.17-.98.7-.99,1.31,0,.59.38,1.12.94,1.3l-2.73,11.09h-2.11c-.21,0-.38.17-.38.38h0v5.75c0,.21.17.38.38.38h.17l-1.66,1.66c-.15.15-.15.39,0,.54l1.06,1.06v.63h-8.29l-1.67-2.33c-.07-.11-.19-.17-.31-.16-.12,0-.24.06-.31.16l-1.62,2.32h-10.3l-1-4.56c-.04-.18-.2-.3-.38-.3h-1.23c-.18,0-.34.12-.38.3l-.99,4.49h-3.79l-1.05-1.28c-.07-.09-.18-.14-.3-.14h-12.23v-1.59c0-.21-.17-.38-.38-.38h-.53l-.98-2.18c-.06-.14-.2-.23-.35-.23-.15,0-.28.09-.35.22l-1.04,2.19h-.55c-.21,0-.38.17-.38.38h0v3h-2.24c-.21,0-.38.17-.38.38h0v1.16l-4.95,2.21c-.23-.21-.5-.37-.8-.47-.58-.23-1.07-.42-1.2-1.73-.23-2.38-.92-2.95-1.05-3.04-.18-.12-.42-.08-.54.1-.12.17-.08.4.09.52,0,0,0,0,0,0,0,0,.54.47.73,2.49-.06,1.09.64,2.07,1.68,2.38.23.06.44.18.6.35.24.36.38.77.44,1.2.12,1.12.86,2.07,1.92,2.46.55.27.65.69.79,1.41.05.34.14.68.26,1,.24.62.79,1.07,1.45,1.17.24.07.48.15.72.25.34.15.47.67.61,1.22.06.62.37,1.18.85,1.58l.07.04c.87.51,2.32,1.37,2.32,2.16,0,.48-.09.95-.25,1.4-.25.65-.29,1.36-.13,2.04l-.1.23c-.56.36-1.2.59-1.86.68-.21.04-.34.24-.3.45.04.21.24.34.45.3,0,0,0,0,0,0,.63-.13,2.11-.48,2.4-1.1.1-.21.18-.42.23-.64.05-.18.06-.21.73-.56.98-.52,1.07-.92,1.13-1.53.02-.25.06-.5.14-.74.19-.48.55-.86,1.02-1.07.3-.14.55-.37.73-.64.23-.4.34-.85.33-1.31,0-.45.08-.9.22-1.33.29-.72.97-1.2,1.74-1.26.87-.19,1.78.09,2.4.74.38.54.59,1.17.61,1.83.02.21.04.43.08.69l.05.32c.16,1.17.39,2.77,1.62,3.01.75.05,1.32.7,1.28,1.45,0,.08-.02.17-.04.25-.14,1.64,1.63,2.33,2.22,2.55.83.39,1.3,1.29,1.15,2.2,0,.51-.06,1.02-.11,1.47-.11,1.09-.21,2.02.52,2.3.01,0,.03.01.04.02h.02s.07.03.11.03h43.87c.21,0,.38-.17.38-.38h0s0-.08-.02-.12c.2-.48.79-1.61,1.49-1.64,1.03-.05,1.13-1.08,1.21-1.9.02-.52.13-1.04.33-1.52.19-.31.43-.59.71-.82.73-.54,1.18-1.37,1.23-2.28,0-.53-.06-1.06-.16-1.58-.2-.63-.14-1.31.16-1.89.25-.61.33-1.27.23-1.92-.03-.57-.07-1.15.16-1.33.41-.34.65-.84.66-1.38,0-.41.18-.8.5-1.05,1.31-1.01,2.26-2.42,2.69-4.02h0Z"/></g><path fill="COL" d="M53.42,35.22h-2.8v-2.1h2.8v2.1h0ZM53.81,32.35h-3.57c-.21,0-.38.17-.38.38h0v2.87c0,.21.17.38.38.38h3.57c.21,0,.38-.17.38-.38h0v-2.87c0-.21-.17-.38-.38-.38h0Z"/><path fill="COL" d="M44.08,41.68h2.02v3.4h-2.02v-3.4h0ZM43.7,45.85h2.79c.21,0,.38-.17.38-.38h0v-4.17c0-.21-.17-.38-.38-.38h-2.79c-.21,0-.38.17-.38.38h0v4.17c0,.21.17.38.38.38h0Z"/><path fill="COL" d="M57.94,41.68h2.02v3.4h-2.02v-3.4h0ZM57.56,45.85h2.79c.21,0,.38-.17.38-.38h0v-4.17c0-.21-.17-.38-.38-.38h-2.79c-.21,0-.38.17-.38.38h0v4.17c0,.21.17.38.38.38h0Z"/><path fill="COL" d="M8.33,72.42l.56-.65c.56.59,1.37.95,2.21.95,1.03,0,1.64-.52,1.64-1.28s-.56-1.06-1.31-1.39l-1.13-.49c-.76-.32-1.59-.89-1.59-2.03,0-1.2,1.03-2.09,2.47-2.09.96,0,1.77.4,2.33.95l-.54.65c-.49-.43-1.09-.72-1.79-.72-.88,0-1.46.44-1.46,1.15,0,.75.68,1.04,1.31,1.31l1.12.48c.94.4,1.62.94,1.62,2.1,0,1.25-1.01,2.24-2.67,2.24-1.13,0-2.07-.44-2.76-1.17Z"/><path fill="COL" d="M15.45,69.52c0-2.53,1.49-4.08,3.49-4.08.94,0,1.7.43,2.16.97l-.54.61c-.42-.44-.96-.71-1.61-.71-1.48,0-2.47,1.22-2.47,3.18s.96,3.23,2.48,3.23c.73,0,1.3-.29,1.8-.83l.52.58c-.64.72-1.37,1.13-2.39,1.13-1.97,0-3.44-1.51-3.44-4.08Z"/><path fill="COL" d="M23.36,65.59h1v3.3h3.66v-3.3h1.01v7.87h-1.01v-3.71h-3.66v3.71h-1v-7.87Z"/><path fill="COL" d="M31.79,65.59h1v7.02h3.44v.85h-4.44v-7.87Z"/><path fill="COL" d="M37.45,69.49c0-2.52,1.38-4.04,3.36-4.04s3.37,1.54,3.37,4.04-1.39,4.11-3.37,4.11-3.36-1.58-3.36-4.11ZM43.14,69.49c0-1.96-.92-3.17-2.33-3.17s-2.33,1.21-2.33,3.17.92,3.24,2.33,3.24,2.33-1.27,2.33-3.24Z"/><path fill="COL" d="M45.9,72.42l.56-.65c.56.59,1.37.95,2.21.95,1.03,0,1.64-.52,1.64-1.28s-.56-1.06-1.31-1.39l-1.13-.49c-.76-.32-1.59-.89-1.59-2.03,0-1.2,1.03-2.09,2.47-2.09.96,0,1.78.4,2.33.95l-.54.65c-.49-.43-1.09-.72-1.79-.72-.88,0-1.46.44-1.46,1.15,0,.75.68,1.04,1.31,1.31l1.12.48c.94.4,1.62.94,1.62,2.1,0,1.25-1.01,2.24-2.67,2.24-1.13,0-2.07-.44-2.76-1.17Z"/><path fill="COL" d="M52.74,72.42l.56-.65c.56.59,1.37.95,2.21.95,1.03,0,1.64-.52,1.64-1.28s-.56-1.06-1.31-1.39l-1.13-.49c-.76-.32-1.59-.89-1.59-2.03,0-1.2,1.03-2.09,2.47-2.09.96,0,1.77.4,2.33.95l-.54.65c-.49-.43-1.09-.72-1.79-.72-.88,0-1.46.44-1.46,1.15,0,.75.68,1.04,1.31,1.31l1.12.48c.94.4,1.62.94,1.62,2.1,0,1.25-1.01,2.24-2.67,2.24-1.13,0-2.07-.44-2.76-1.17Z"/><path fill="COL" d="M62.63,71.42c0-1.06.74-1.71,1.55-2.27-.32-.65-.52-1.27-.52-1.85,0-1.04.73-1.86,1.82-1.86.97,0,1.55.64,1.55,1.56,0,1.03-.9,1.69-1.77,2.33.52.8,1.25,1.58,1.99,2.2.49-.64.86-1.42,1.1-2.32h.92c-.29,1.02-.74,1.99-1.38,2.82.54.38,1.08.62,1.48.75l-.26.82c-.55-.16-1.18-.46-1.8-.9-.59.54-1.3.9-2.23.9-1.42,0-2.45-.85-2.45-2.18ZM65.13,72.81c.54,0,1.04-.24,1.5-.64-.77-.67-1.51-1.49-2.06-2.34-.55.44-.98.91-.98,1.52,0,.91.71,1.45,1.55,1.45ZM64.88,68.67c.72-.48,1.34-.96,1.34-1.66,0-.46-.22-.86-.74-.86-.59,0-.97.49-.97,1.14,0,.43.14.91.37,1.38Z"/><path fill="COL" d="M73.78,69.52c0-2.53,1.52-4.08,3.61-4.08,1.09,0,1.81.48,2.27.97l-.55.62c-.4-.42-.9-.72-1.69-.72-1.58,0-2.6,1.22-2.6,3.18s.94,3.23,2.61,3.23c.56,0,1.1-.18,1.42-.47v-2.05h-1.67v-.83h2.58v3.31c-.5.53-1.37.91-2.42.91-2.08,0-3.55-1.51-3.55-4.08Z"/><path fill="COL" d="M82.2,70.25v-4.67h1v4.69c0,1.86.8,2.45,1.83,2.45s1.86-.59,1.86-2.45v-4.69h.96v4.67c0,2.49-1.21,3.35-2.82,3.35s-2.83-.85-2.83-3.35Z"/><path fill="COL" d="M92.21,66.43h-2.38v-.84h5.76v.84h-2.38v7.03h-1.01v-7.03Z"/><path fill="COL" d="M0,79.51h2.35v8.45h4.13v1.98H0v-10.44Z"/><path fill="COL" d="M9.89,79.51h2.35v10.44h-2.35v-10.44Z"/><path fill="COL" d="M16.3,79.51h6.53v1.99h-4.18v2.1h3.55v1.97h-3.55v2.4h4.34v1.98h-6.69v-10.44Z"/><path fill="COL" d="M26.67,79.51h3.57c2.16,0,3.84.59,3.84,2.59,0,1.04-.5,1.94-1.36,2.26v.06c1.17.27,1.87,1.01,1.87,2.34,0,2.21-1.79,3.19-4.05,3.19h-3.87v-10.44ZM30.13,83.69c1.15,0,1.65-.48,1.65-1.23,0-.82-.53-1.12-1.63-1.12h-1.12v2.35h1.1ZM30.35,88.12c1.28,0,1.94-.45,1.94-1.41s-.64-1.28-1.94-1.28h-1.33v2.69h1.33Z"/><path fill="COL" d="M37.95,79.51h6.53v1.99h-4.18v2.1h3.55v1.97h-3.55v2.4h4.34v1.98h-6.69v-10.44Z"/><path fill="COL" d="M48.8,79.51h2.46l2.67,5.14c.37.7.71,1.54,1.02,2.35h.06c-.11-1.12-.3-2.56-.3-3.79v-3.7h2.26v10.44h-2.46l-2.67-5.14c-.37-.71-.72-1.54-1.04-2.35h-.06c.13,1.15.32,2.56.32,3.79v3.7h-2.26v-10.44Z"/><path fill="COL" d="M61.52,79.51h3.57c2.16,0,3.84.59,3.84,2.59,0,1.04-.5,1.94-1.36,2.26v.06c1.17.27,1.87,1.01,1.87,2.34,0,2.21-1.79,3.19-4.05,3.19h-3.87v-10.44ZM64.98,83.69c1.15,0,1.65-.48,1.65-1.23,0-.82-.53-1.12-1.63-1.12h-1.12v2.35h1.1ZM65.2,88.12c1.28,0,1.94-.45,1.94-1.41s-.64-1.28-1.94-1.28h-1.33v2.69h1.33Z"/><path fill="COL" d="M73.28,79.51h6.53v1.99h-4.18v2.1h3.55v1.97h-3.55v2.4h4.34v1.98h-6.69v-10.44Z"/><path fill="COL" d="M84.13,79.51h3.76c2.21,0,4.02.77,4.02,3.25,0,1.54-.74,2.51-1.86,3.01l2.37,4.18h-2.64l-2-3.76h-1.3v3.76h-2.35v-10.44ZM87.7,84.31c1.23,0,1.91-.53,1.91-1.55s-.67-1.38-1.91-1.38h-1.22v2.93h1.22Z"/><path fill="COL" d="M95.52,84.79c0-3.46,2.3-5.47,5.09-5.47,1.5,0,2.59.62,3.28,1.36l-1.23,1.42c-.53-.46-1.07-.75-1.97-.75-1.62,0-2.75,1.26-2.75,3.36s.98,3.39,2.93,3.39c.43,0,.87-.11,1.12-.32v-1.79h-1.73v-1.92h3.81v4.8c-.72.7-1.99,1.26-3.44,1.26-2.87,0-5.11-1.84-5.11-5.35Z"/></svg>`;
+let _logoUid=0;
+const logoSVG=c=>SGL_LOGO.replaceAll('COL',c).replaceAll('__UID__','_'+(++_logoUid));
+document.getElementById('logoslot').innerHTML=logoSVG('#6b7525');
+document.getElementById('logoBig').innerHTML=logoSVG('#ffffff');
+
+const CFG={EYE:1.7,WALK:6.6,RUN:13,GRAV:22,JUMP:7.2,RADIUS:0.75,BOUND:330,SENS:0.0022};
+let scene,camera,renderer,clock,sky,sun,sunLight,hemi,water;
+const blockers=[], pois=[];
+let carriage,wheels=[],chickens=[],deer=[],balloon,clouds=[],flags=[];
+const SPAWN=new THREE.Vector3(-2,CFG.EYE,-9);
+const pos=SPAWN.clone(); let yaw=3.516, pitch=-0.02, vy=0, canJump=true;
+const TOUCH=(matchMedia&&matchMedia('(pointer:coarse)').matches)||('ontouchstart' in window);
+const touchMove={x:0,y:0}; let runOn=false, lookId=null, stickId=null, lookLX=0, lookLY=0, stickCX=0, stickCY=0;
+const keys={}; let started=false, foundCount=0, nearPoi=null, infoOpen=false, tAcc=0, mmCtx=null;
+
+// ---------- helpers ----------
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function addBlock(cx,cz,w,d){ blockers.push({x1:cx-w/2,z1:cz-d/2,x2:cx+w/2,z2:cz+d/2}); }
+function mat(c,r,fs){ return new THREE.MeshStandardMaterial({color:c,roughness:r==null?.95:r,flatShading:!!fs}); }
+const MAT={};
+function initMat(){
+  MAT.slate=new THREE.MeshStandardMaterial({color:0x3c414b,roughness:.8,flatShading:true,side:THREE.DoubleSide});
+  MAT.tile =new THREE.MeshStandardMaterial({color:0xc2552a,roughness:.88,flatShading:true,side:THREE.DoubleSide});
+  MAT.tileDark=new THREE.MeshStandardMaterial({color:0x8f4a2c,roughness:.9,flatShading:true,side:THREE.DoubleSide});
+  MAT.greyRoof=new THREE.MeshStandardMaterial({color:0x8c8c86,roughness:.95,flatShading:true,side:THREE.DoubleSide});
+  MAT.cream=mat(0xf0e3c2); MAT.creamL=mat(0xf7efdb); MAT.pink=mat(0xdcb9a4);
+  MAT.trunk=mat(0x6b4b30,1); MAT.leafA=mat(0x5c7334,1,true); MAT.leafB=mat(0x71863c,1,true);
+  MAT.leafC=mat(0x879a4c,1,true); MAT.pine=mat(0x3f5a34,1,true);
+  MAT.stone=mat(0xc7b892,1); MAT.sand=mat(0xcdb98d,1); MAT.wood=mat(0x8a6b45,1);
+  MAT.copper=new THREE.MeshStandardMaterial({color:0x4f9c82,roughness:.5,metalness:.4,flatShading:true});
+  MAT.goldM=new THREE.MeshStandardMaterial({color:0xc9a24a,roughness:.4,metalness:.5});
+  MAT.glass=new THREE.MeshStandardMaterial({color:0xa6c6cc,roughness:.08,metalness:.15,transparent:true,opacity:.42});
+  MAT.white=mat(0xfbf8f0);
+}
+
+// fieldstone texture (church / socles)
+function fieldstoneTex(){
+  const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
+  g.fillStyle='#8f897c';g.fillRect(0,0,128,128);
+  for(let i=0;i<150;i++){const s=6+Math.random()*13;g.fillStyle=`rgb(${120+Math.random()*45|0},${115+Math.random()*40|0},${102+Math.random()*40|0})`;
+    g.beginPath();g.ellipse(Math.random()*128,Math.random()*128,s*.6,s*.45,0,0,7);g.fill();g.strokeStyle='rgba(60,55,48,.4)';g.stroke();}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(3,3);return t;
+}
+function brickTex(){
+  const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
+  g.fillStyle='#95502f';g.fillRect(0,0,128,128);
+  for(let y=0;y<128;y+=11){const off=(y/11)%2?8:0;for(let x=-16;x<136;x+=32){
+    g.fillStyle=`rgb(${140+Math.random()*34|0},${72+Math.random()*24|0},${46+Math.random()*18|0})`;g.fillRect(x+off,y,28,9);}}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(4,4);return t;
+}
+const FIELD=()=>new THREE.MeshStandardMaterial({map:fieldstoneTex(),roughness:1});
+const BRICK=()=>new THREE.MeshStandardMaterial({map:brickTex(),roughness:1});
+
+// facade panel (canvas) — placed just in front of a plain body for crisp windows
+function facadePanel(w,h,o){
+  o=o||{}; const px=Math.min(1024,Math.round(w*22)), py=Math.min(1024,Math.round(h*22));
+  const c=document.createElement('canvas');c.width=px;c.height=py;const g=c.getContext('2d');
+  g.fillStyle=o.base||'#e7dabc';g.fillRect(0,0,px,py);
+  // vertical shading
+  const grd=g.createLinearGradient(0,0,0,py);grd.addColorStop(0,'rgba(255,255,255,.10)');grd.addColorStop(1,'rgba(0,0,0,.10)');
+  g.fillStyle=grd;g.fillRect(0,0,px,py);
+  const socle=o.socle? py*0.14:0;
+  if(o.socle){ // fieldstone base
+    g.fillStyle='#8f897c';g.fillRect(0,py-socle,px,socle);
+    for(let i=0;i<px/6;i++){g.fillStyle=`rgba(${110+Math.random()*50|0},${105+Math.random()*40|0},${95+Math.random()*40|0},.9)`;
+      g.beginPath();g.ellipse(Math.random()*px,py-socle+Math.random()*socle,5+Math.random()*6,4+Math.random()*4,0,0,7);g.fill();}
+  }
+  const cols=o.cols||4, rows=o.rows||2;
+  const padx=px*0.10, top=py*0.10, usableH=py-socle-top - py*0.06;
+  const cw=(px-padx*2)/cols, rh=usableH/rows;
+  // pilaster strips
+  if(o.pilaster){ g.fillStyle='rgba(255,255,255,.16)';
+    for(let i=0;i<=cols;i++){const x=padx+i*cw-6;g.fillRect(x,top-py*0.04,12,usableH+py*0.06);} }
+  for(let r=0;r<rows;r++)for(let cI=0;cI<cols;cI++){
+    const wx=padx+cI*cw+cw*0.24, wy=top+r*rh+rh*0.16, ww=cw*0.52, wh=rh*0.60;
+    // frame
+    g.fillStyle=o.frame||'#efe7d2';g.fillRect(wx-ww*0.16,wy-wh*0.10,ww*1.32,wh*1.18);
+    const lit=o.lit&&Math.random()<o.lit;
+    g.fillStyle=lit?'#ffd98a':'#38424e';
+    if(o.arch && r===rows-1){ // round-arched ground windows
+      g.beginPath();g.moveTo(wx,wy+wh);g.lineTo(wx,wy+wh*0.35);g.arc(wx+ww/2,wy+wh*0.35,ww/2,Math.PI,0);g.lineTo(wx+ww,wy+wh);g.closePath();g.fill();
+    } else { g.fillRect(wx,wy,ww,wh); }
+    g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=Math.max(1,ww*0.03);
+    g.beginPath();g.moveTo(wx+ww/2,wy);g.lineTo(wx+ww/2,wy+wh);g.moveTo(wx,wy+wh/2);g.lineTo(wx+ww,wy+wh/2);g.stroke();
+  }
+  if(o.ivy){ g.fillStyle='rgba(70,96,44,.85)';
+    for(let i=0;i<220;i++){const x=Math.random()*px, y=py*0.2+Math.random()*py*0.78, r2=3+Math.random()*7;
+      g.beginPath();g.arc(x,y,r2,0,7);g.fill();} }
+  if(o.portal){ g.fillStyle='#5a4630';g.fillRect(px/2-px*0.05,py-socle-py*0.22,px*0.10,py*0.22);
+    g.fillStyle='#3a2c1c';g.fillRect(px/2-px*0.038,py-socle-py*0.20,px*0.076,py*0.20);}
+  const t=new THREE.CanvasTexture(c);t.anisotropy=4;
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:t,roughness:.95}));
+  return m;
+}
+
+// hip roof geometry (proper ridge)
+function hipRoof(w,d,h,material,ov){
+  ov=ov==null?0.5:ov; w+=ov*2; d+=ov*2; const hw=w/2,hd=d/2,P=[];
+  const push=(a,b,c)=>{P.push(a[0],a[1],a[2],b[0],b[1],b[2],c[0],c[1],c[2]);};
+  const C1=[-hw,0,-hd],C2=[hw,0,-hd],C3=[hw,0,hd],C4=[-hw,0,hd];
+  if(w>=d){const rx=(w-d)/2,A=[-rx,h,0],B=[rx,h,0];
+    push(C4,C3,B);push(C4,B,A);push(C2,C1,A);push(C2,A,B);push(C3,C2,B);push(C1,C4,A);
+  }else{const rz=(d-w)/2,A=[0,h,-rz],B=[0,h,rz];
+    push(C2,C3,B);push(C2,B,A);push(C4,C1,A);push(C4,A,B);push(C3,C4,B);push(C1,C2,A);}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(P,3));geo.computeVertexNormals();
+  const m=new THREE.Mesh(geo,material);m.castShadow=true;m.receiveShadow=true;return m;
+}
+function gableRoof(w,d,rh,material,ridge,ov){
+  ov=ov==null?0.4:ov; const gw=(ridge==='x'?d:w)+ov*2, len=(ridge==='x'?w:d)+ov*2;
+  const s=new THREE.Shape();s.moveTo(-gw/2,0);s.lineTo(gw/2,0);s.lineTo(0,rh);s.lineTo(-gw/2,0);
+  const geo=new THREE.ExtrudeGeometry(s,{depth:len,bevelEnabled:false});geo.translate(0,0,-len/2);
+  const m=new THREE.Mesh(geo,material);m.castShadow=true;if(ridge==='x')m.rotation.y=Math.PI/2;return m;
+}
+function box(w,h,d,m,x,y,z){const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);b.castShadow=true;b.receiveShadow=true;scene.add(b);return b;}
+function place(o,x,y,z){o.position.set(x,y,z);scene.add(o);return o;}
+
+function finial(x,y,z,s){const g=new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(.12*s,.16*s,.5*s,8),MAT.stone));
+  const ball=new THREE.Mesh(new THREE.SphereGeometry(.18*s,10,8),MAT.goldM);ball.position.y=.4*s;
+  const sp=new THREE.Mesh(new THREE.ConeGeometry(.09*s,.5*s,8),MAT.goldM);sp.position.y=.75*s;
+  g.add(ball,sp);g.position.set(x,y,z);scene.add(g);return g;}
+
+function dormer(x,y,z,rotY,style){const g=new THREE.Group();
+  const bodyM=MAT.creamL;
+  const bd=new THREE.Mesh(new THREE.BoxGeometry(2.8,2.2,1.6),bodyM);bd.position.y=1.1;bd.castShadow=true;g.add(bd);
+  // Fenster mit Rahmen und Sprossen
+  const rev=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.4,.24),mat(0x323c47));rev.position.set(0,1.25,.78);g.add(rev);
+  const b1=new THREE.Mesh(new THREE.BoxGeometry(.07,1.4,.1),MAT.white);b1.position.set(0,1.25,.92);g.add(b1);
+  const b2=new THREE.Mesh(new THREE.BoxGeometry(1.5,.07,.1),MAT.white);b2.position.set(0,1.25,.92);g.add(b2);
+  [[0,2.0,1.72,.14],[0,.5,1.72,.14],[-.79,1.25,.14,1.5],[.79,1.25,.14,1.5]].forEach(p=>{
+    const b=new THREE.Mesh(new THREE.BoxGeometry(p[2],p[3],.2),MAT.white);b.position.set(p[0],p[1],.84);g.add(b);});
+  if(style==='scroll'){
+    // geschwungener Volutengiebel: gestufte Bögen mit seitlichen Schnecken
+    const steps=[[2.9,.34,2.25],[2.4,.32,2.56],[1.8,.30,2.85],[1.15,.30,3.12]];
+    steps.forEach(st=>{const b=new THREE.Mesh(new THREE.BoxGeometry(st[0],st[1],1.05),MAT.creamL);
+      b.position.set(0,st[2],.62);g.add(b);});
+    [-1,1].forEach(sg=>{const v=new THREE.Mesh(new THREE.TorusGeometry(.34,.13,8,14,Math.PI),MAT.white);
+      v.position.set(sg*1.25,2.45,.62);v.rotation.z=sg<0?0:Math.PI;g.add(v);
+      const fi=new THREE.Mesh(new THREE.ConeGeometry(.15,.62,8),MAT.white);fi.position.set(sg*1.3,2.95,.62);g.add(fi);});
+    const top=new THREE.Mesh(new THREE.ConeGeometry(.19,.8,8),MAT.white);top.position.set(0,3.6,.62);g.add(top);
+    const bl=new THREE.Mesh(new THREE.SphereGeometry(.14,10,8),MAT.white);bl.position.set(0,3.2,.62);g.add(bl);
+  }else{
+    // Dreiecksgiebel mit Akroterien
+    const ped=gableRoof(2.9,1.05,1.0,MAT.creamL,'x',.16);ped.position.set(0,2.2,.62);g.add(ped);
+    [-1,1].forEach(sg=>{const fi=new THREE.Mesh(new THREE.ConeGeometry(.15,.6,8),MAT.white);
+      fi.position.set(sg*1.42,2.5,.62);g.add(fi);});
+    const top=new THREE.Mesh(new THREE.ConeGeometry(.17,.7,8),MAT.white);top.position.set(0,3.45,.62);g.add(top);
+  }
+  const r=gableRoof(3.0,1.8,1.1,MAT.slate,'x',.18);r.position.y=2.2;g.add(r);
+  g.position.set(x,y,z);g.rotation.y=rotY||0;scene.add(g);return g;}
+
+// Hofturm mit Glockenstube und Schieferhelm (nach Bild 7)
+function hofTower(x,z,side,bodyH,spireH){const g=new THREE.Group();
+  const b=new THREE.Mesh(new THREE.BoxGeometry(side,bodyH,side),MAT.creamL);b.position.y=bodyH/2;b.castShadow=true;g.add(b);
+  // Glockenstube: gekuppelte Rundbogenfenster auf allen vier Seiten
+  for(let i=0;i<4;i++){const a=i*Math.PI/2;
+    const grp=new THREE.Group();
+    [-.62,.62].forEach(off=>{
+      const w=new THREE.Mesh(new THREE.BoxGeometry(.85,1.7,.3),mat(0x2b3640));w.position.set(off,bodyH-2.6,side/2+.02);grp.add(w);
+      for(let k=0;k<7;k++){const ang=Math.PI*(k/6);const sgm=new THREE.Mesh(new THREE.BoxGeometry(.26,.26,.32),MAT.white);
+        sgm.position.set(off+Math.cos(ang)*.43,bodyH-1.75+Math.sin(ang)*.43,side/2+.02);sgm.rotation.z=ang;grp.add(sgm);}});
+    grp.rotation.y=a;g.add(grp);}
+  // Gurtgesims + Traufgesims
+  [bodyH-4.2,bodyH-.3].forEach(yy=>{const c=new THREE.Mesh(new THREE.BoxGeometry(side+.6,.3,side+.6),MAT.white);c.position.y=yy;g.add(c);});
+  // schlanker Achtkanthelm
+  const sp=new THREE.Mesh(new THREE.ConeGeometry(side*.72,spireH,8),MAT.slate);
+  sp.position.y=bodyH+spireH/2;sp.castShadow=true;g.add(sp);
+  const kn=new THREE.Mesh(new THREE.SphereGeometry(.34,12,10),MAT.goldM);kn.position.y=bodyH+spireH+.2;g.add(kn);
+  const st=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,2.2,6),MAT.goldM);st.position.y=bodyH+spireH+1.4;g.add(st);
+  g.position.set(x,0,z);scene.add(g);addBlock(x,z,side,side);return g;}
+
+// Dreibogiges Hofportal mit Freitreppe (nach Bild 7)
+function portal3(x,z,rotY){const g=new THREE.Group();
+  for(let i=-1;i<=1;i++){
+    const op=new THREE.Mesh(new THREE.BoxGeometry(1.8,3.2,.5),mat(0x25303a));op.position.set(i*2.3,1.6,0);g.add(op);
+    for(let k=0;k<9;k++){const ang=Math.PI*(k/8);const sgm=new THREE.Mesh(new THREE.BoxGeometry(.32,.32,.6),MAT.white);
+      sgm.position.set(i*2.3+Math.cos(ang)*1.05,3.2+Math.sin(ang)*1.05,0);sgm.rotation.z=ang;g.add(sgm);}
+    const gl=new THREE.Mesh(new THREE.BoxGeometry(1.5,2.9,.1),
+      new THREE.MeshStandardMaterial({color:0xffd694,emissive:0xffb459,emissiveIntensity:.75,roughness:.5}));
+    gl.position.set(i*2.3,1.55,.2);g.add(gl);}
+  for(let i=0;i<4;i++){const st=new THREE.Mesh(new THREE.BoxGeometry(8.5-i*.5,.22,.55),MAT.stone);
+    st.position.set(0,.11+i*.22,.9+i*.55);g.add(st);}
+  g.position.set(x,0,z);g.rotation.y=rotY||0;scene.add(g);return g;}
+
+function towerSpire(x,z,baseY,r,bodyH,spireH){const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(r,r,bodyH,16),MAT.cream);body.position.y=bodyH/2;body.castShadow=true;g.add(body);
+  const sp=new THREE.Mesh(new THREE.ConeGeometry(r*1.12,spireH,16),MAT.slate);sp.position.y=bodyH+spireH/2;sp.castShadow=true;g.add(sp);
+  const b=new THREE.Mesh(new THREE.SphereGeometry(r*.22,10,8),MAT.goldM);b.position.y=bodyH+spireH;g.add(b);
+  g.position.set(x,baseY,z);scene.add(g);return g;}
+
+function lantern(x,y,z,s){const g=new THREE.Group();
+  g.add(box(2.2*s,1.7*s,2.2*s,MAT.creamL,0,0.85*s,0));
+  for(let i=0;i<4;i++){const w=new THREE.Mesh(new THREE.PlaneGeometry(1.2*s,1.0*s),mat(0x3a444e));
+    w.position.set(Math.sin(i*Math.PI/2)*1.11*s,0.9*s,Math.cos(i*Math.PI/2)*1.11*s);w.rotation.y=i*Math.PI/2;g.add(w);}
+  const r=hipRoof(2.2*s,2.2*s,1.5*s,MAT.tile,0.2);r.position.y=1.7*s;g.add(r);
+  finialLocal(g,0,3.2*s,0,s*0.8);
+  g.position.set(x,y,z);scene.add(g);return g;}
+function finialLocal(parent,x,y,z,s){const ball=new THREE.Mesh(new THREE.SphereGeometry(.16*s,10,8),MAT.goldM);
+  const sp=new THREE.Mesh(new THREE.ConeGeometry(.08*s,.5*s,8),MAT.goldM);sp.position.y=.32*s;ball.add(sp);ball.position.set(x,y,z);parent.add(ball);}
+
+function conservatory(x,z,w,h,d){const g=new THREE.Group();
+  const glass=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),MAT.glass);glass.position.y=h/2;g.add(glass);
+  const fr=MAT.white; const ex=w/2,ez=d/2;
+  [[-ex,-ez],[ex,-ez],[ex,ez],[-ex,ez]].forEach(p=>{const c=new THREE.Mesh(new THREE.BoxGeometry(.16,h,.16),fr);c.position.set(p[0],h/2,p[1]);g.add(c);});
+  for(let i=1;i<Math.round(w/1.4);i++){const c=new THREE.Mesh(new THREE.BoxGeometry(.08,h,.08),fr);c.position.set(-ex+i*1.4,h/2,ez);g.add(c);}
+  const roof=hipRoof(w,d,1.2,MAT.tile,0.25);roof.position.y=h;g.add(roof);
+  g.position.set(x,0,z);scene.add(g);return g;}
+
+function balustrade(x,z,len,rotY){const g=new THREE.Group();
+  g.add(box(len,.18,.4,MAT.stone,0,.95,0)); g.add(box(len,.16,.5,MAT.stone,0,.06,0));
+  for(let i=0;i<=len;i+=.45){const b=new THREE.Mesh(new THREE.CylinderGeometry(.09,.11,.75,8),MAT.stone);b.position.set(-len/2+i,.5,0);g.add(b);}
+  g.position.set(x,0,z);g.rotation.y=rotY||0;scene.add(g);return g;}
+
+function steppedGable(cx,cy,cz,faceZ,brickMat){ // stepped brick gable on a tower face
+  const steps=[[5.2,.7],[3.9,.7],[2.6,.7],[1.3,.9]];let y=cy;
+  steps.forEach(s=>{const b=box(faceZ?1.0:s[0], s[1], faceZ?s[0]:1.0, brickMat, cx, y+s[1]/2, cz);y+=s[1];});
+}
+
+function kaiserbrunnen(x,z){const g=new THREE.Group();
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.9,.9,6),MAT.sand);base.position.y=.45;base.castShadow=true;g.add(base);
+  // cartouche plaque
+  const pl=new THREE.Mesh(new THREE.BoxGeometry(1.5,.9,.18),mat(0xd8c9a4));pl.position.set(0,.9,1.55);g.add(pl);
+  // 4 posts
+  for(let i=0;i<4;i++){const a=Math.PI/4+i*Math.PI/2;const p=new THREE.Mesh(new THREE.BoxGeometry(.28,3.2,.28),MAT.sand);
+    p.position.set(Math.cos(a)*1.15,2.5,Math.sin(a)*1.15);p.castShadow=true;g.add(p);}
+  // gold band
+  const band=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,.35,8),MAT.goldM);band.position.y=4.1;g.add(band);
+  // bell/ogee copper dome via lathe
+  const pts=[];const prof=[[0,0],[1.5,.15],[1.62,.5],[1.25,1.1],[.75,1.7],[.32,2.15],[.07,2.45]];
+  prof.forEach(p=>pts.push(new THREE.Vector2(p[0],p[1])));
+  const dome=new THREE.Mesh(new THREE.LatheGeometry(pts,20),MAT.copper);dome.position.y=4.3;dome.castShadow=true;g.add(dome);
+  finialLocal(g,0,6.95,0,1.2);
+  g.position.set(x,0,z);scene.add(g);addBlock(x,z,3,3);return g;}
+
+// trees
+function tree(x,z,type){const g=new THREE.Group();const leaf=[MAT.leafA,MAT.leafB,MAT.leafC][Math.floor(Math.random()*3)];
+  if(type==='pine'){const tr=new THREE.Mesh(new THREE.CylinderGeometry(.25,.4,3,6),MAT.trunk);tr.position.y=1.5;g.add(tr);
+    for(let i=0;i<3;i++){const c=new THREE.Mesh(new THREE.ConeGeometry(2.4-i*.6,3.2,8),MAT.pine);c.position.y=3.2+i*2.1;if(i===2)c.castShadow=true;g.add(c);} }
+  else if(type==='allee'){const tr=new THREE.Mesh(new THREE.CylinderGeometry(.22,.34,4,6),MAT.trunk);tr.position.y=2;g.add(tr);
+    const f=new THREE.Mesh(new THREE.ConeGeometry(2,9,8),leaf);f.position.y=8;f.castShadow=true;g.add(f);}
+  else if(type==='lime'){ // pleached / clipped
+    const tr=new THREE.Mesh(new THREE.CylinderGeometry(.16,.22,2.6,6),MAT.trunk);tr.position.y=1.3;g.add(tr);
+    const f=new THREE.Mesh(new THREE.BoxGeometry(2.2,2.6,2.2),leaf);f.position.y=4;f.castShadow=true;g.add(f);}
+  else{const tr=new THREE.Mesh(new THREE.CylinderGeometry(.24,.4,2.6,6),MAT.trunk);tr.position.y=1.3;g.add(tr);
+    for(let i=0;i<3;i++){const r=1.9+Math.random()*1.4;const f=new THREE.Mesh(new THREE.IcosahedronGeometry(r,0),leaf);
+      f.position.set((Math.random()-.5)*2,3.2+i*1.4,(Math.random()-.5)*2);if(i===2)f.castShadow=true;g.add(f);} }
+  const s=type==='lime'?1:rnd(.8,1.35);g.scale.setScalar(s);g.position.set(x,0,z);g.rotation.y=Math.random()*6.28;scene.add(g);return g;}
+
+function flag(x,z){const g=new THREE.Group();
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,7,8),mat(0xdedede,.4,false));pole.position.y=3.5;g.add(pole);
+  const cvs=document.createElement('canvas');cvs.width=64;cvs.height=40;const c=cvs.getContext('2d');c.fillStyle='#6B7A3E';c.fillRect(0,0,64,40);
+  c.fillStyle='#fff';c.font='bold 22px Georgia';c.textAlign='center';c.fillText('SGL',32,28);
+  const fm=new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(cvs),side:THREE.DoubleSide,roughness:.9});
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(2.2,1.4),fm);fl.position.set(1.1,6,0);g.add(fl);fl.userData.flag=true;
+  g.position.set(x,0,z);scene.add(g);flags.push(fl);return g;}
+
+// agents (Kutsche, Hühner, Rehe, Ballon, Wolken) ----------------------------
+function makeCarriage(){const g=new THREE.Group();const dark=mat(0x33241a,.7);
+  const cab=new THREE.Mesh(new THREE.BoxGeometry(2,1.5,2.6),dark);cab.position.y=1.7;cab.castShadow=true;g.add(cab);
+  const rf=new THREE.Mesh(new THREE.BoxGeometry(2.2,.2,2.8),MAT.goldM);rf.position.y=2.5;g.add(rf);
+  const wg=new THREE.CylinderGeometry(.7,.7,.2,14),wgm=new THREE.CylinderGeometry(.42,.42,.22,10);
+  [[1.15,-.9,1],[-1.15,-.9,1],[1.15,.9,0],[-1.15,.9,0]].forEach(p=>{const w=new THREE.Group();
+    const wh=new THREE.Mesh(p[2]?wg:wgm,mat(0x211810));wh.rotation.z=Math.PI/2;w.add(wh);w.position.set(p[0],p[2]?.7:.45,p[1]);g.add(w);wheels.push(w);});
+  const hm=mat(0x5a3d28,.9);for(let h=0;h<2;h++){const hg=new THREE.Group();
+    const bd=new THREE.Mesh(new THREE.BoxGeometry(.85,1,2),hm);bd.position.y=1.4;bd.castShadow=true;hg.add(bd);
+    const nk=new THREE.Mesh(new THREE.BoxGeometry(.5,.9,.5),hm);nk.position.set(0,1.9,1.1);nk.rotation.x=-.5;hg.add(nk);
+    const hd=new THREE.Mesh(new THREE.BoxGeometry(.4,.4,.9),hm);hd.position.set(0,2.3,1.5);hg.add(hd);
+    [[.32,.8],[-.32,.8],[.32,-.8],[-.32,-.8]].forEach(l=>{const lg=new THREE.Mesh(new THREE.BoxGeometry(.18,1.4,.18),hm);lg.position.set(l[0],.7,l[1]);hg.add(lg);});
+    hg.position.set(h?.55:-.55,0,3.2);g.add(hg);}
+  g.position.set(-5,0,100);scene.add(g);return g;}
+function makeChicken(x,z){const g=new THREE.Group();const b=new THREE.Mesh(new THREE.SphereGeometry(.28,10,8),MAT.white);
+  b.scale.set(1,.9,1.3);b.position.y=.32;b.castShadow=true;g.add(b);
+  const chh=new THREE.Mesh(new THREE.SphereGeometry(.15,8,6),MAT.white);chh.position.set(0,.55,.28);g.add(chh);
+  const chb=new THREE.Mesh(new THREE.BoxGeometry(.06,.1,.14),mat(0xcc3b2a));chb.position.set(0,.68,.28);g.add(chb);
+  g.position.set(x,0,z);g.userData={tx:x,tz:z,t:Math.random()*6,ph:Math.random()*6};scene.add(g);return g;}
+function makeDeer(x,z){const g=new THREE.Group();const m=mat(0x7a5233,.95);
+  const bd=new THREE.Mesh(new THREE.BoxGeometry(.7,.8,1.7),m);bd.position.y=1.25;bd.castShadow=true;g.add(bd);
+  const nk=new THREE.Mesh(new THREE.BoxGeometry(.35,.8,.35),m);nk.position.set(0,1.75,.85);nk.rotation.x=-.4;g.add(nk);
+  const dh=new THREE.Mesh(new THREE.BoxGeometry(.3,.3,.6),m);dh.position.set(0,2.05,1.15);g.add(dh);
+  [[.25,.7],[-.25,.7],[.25,-.7],[-.25,-.7]].forEach(l=>{const lg=new THREE.Mesh(new THREE.BoxGeometry(.15,1.2,.15),m);lg.position.set(l[0],.6,l[1]);g.add(lg);});
+  g.position.set(x,0,z);g.userData={tx:x,tz:z,t:Math.random()*10};scene.add(g);return g;}
+function makeBalloon(){const g=new THREE.Group();const cols=[0xB8924A,0x6B7A3E,0xA04050,0x1E3560];
+  for(let i=0;i<8;i++){const s=new THREE.Mesh(new THREE.SphereGeometry(3,8,8,i/8*6.28,6.28/8),mat(cols[i%4],.6));s.scale.y=1.25;s.position.y=6;g.add(s);}
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(1.3,1.1,1.3),MAT.wood));
+  g.position.set(40,52,-20);scene.add(g);return g;}
+function makeClouds(){const cvs=document.createElement('canvas');cvs.width=cvs.height=128;const g=cvs.getContext('2d');
+  const gr=g.createRadialGradient(64,64,10,64,64,64);gr.addColorStop(0,'rgba(255,255,255,.9)');gr.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=gr;g.fillRect(0,0,128,128);const tex=new THREE.CanvasTexture(cvs);
+  for(let i=0;i<6;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,opacity:.85,depthWrite:false,fog:false}));
+    s.scale.set(60+Math.random()*40,26+Math.random()*14,1);s.position.set((Math.random()-.5)*340,64+Math.random()*30,-80-Math.random()*180);scene.add(s);clouds.push(s);}}
+
+// ---- Gutsführer: Figur, Route, Gespräch ---------------------------------
+let guide=null, guideNear=false, dialogOpen=false, guideWp=0, guidePause=0, guideTopic=0;
+
+function makeGuide(){
+  const g=new THREE.Group();
+  const coat=mat(0x6B7A3E,.85), trous=mat(0x3b3930,.95), skin=mat(0xe3b189,.8),
+        boot=mat(0x2b241c,.7), cap=mat(0x4f5c30,.85), shirt=mat(0xf2ede0,.9);
+  const torso=new THREE.Mesh(new THREE.BoxGeometry(.56,.76,.32),coat);torso.position.y=1.20;torso.castShadow=true;g.add(torso);
+  const collar=new THREE.Mesh(new THREE.BoxGeometry(.30,.16,.34),shirt);collar.position.y=1.52;g.add(collar);
+  const hips=new THREE.Mesh(new THREE.BoxGeometry(.48,.22,.30),trous);hips.position.y=.80;g.add(hips);
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.08,.09,.12,8),skin);neck.position.y=1.62;g.add(neck);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.155,14,12),skin);head.position.y=1.77;head.scale.set(1,1.12,.95);
+  head.castShadow=true;g.add(head);
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(.04,.10,6),skin);nose.rotation.x=Math.PI/2;nose.position.set(0,1.76,.15);g.add(nose);
+  const capT=new THREE.Mesh(new THREE.SphereGeometry(.17,14,10,0,6.28,0,Math.PI/2),cap);capT.position.y=1.82;g.add(capT);
+  const peak=new THREE.Mesh(new THREE.BoxGeometry(.30,.035,.16),cap);peak.position.set(0,1.83,.16);g.add(peak);
+  const arms=[],legs=[];
+  [-1,1].forEach(sd=>{
+    const a=new THREE.Group(); a.position.set(sd*.36,1.50,0);
+    const up=new THREE.Mesh(new THREE.BoxGeometry(.15,.60,.16),coat);up.position.y=-.30;up.castShadow=true;a.add(up);
+    const hand=new THREE.Mesh(new THREE.BoxGeometry(.13,.14,.14),skin);hand.position.y=-.66;a.add(hand);
+    g.add(a);arms.push(a);
+    const l=new THREE.Group(); l.position.set(sd*.15,.80,0);
+    const th=new THREE.Mesh(new THREE.BoxGeometry(.19,.74,.20),trous);th.position.y=-.37;th.castShadow=true;l.add(th);
+    const bo=new THREE.Mesh(new THREE.BoxGeometry(.21,.14,.30),boot);bo.position.set(0,-.78,.04);l.add(bo);
+    g.add(l);legs.push(l);});
+  g.userData={arms,legs};
+  g.position.set(6,0,-10); scene.add(g); return g;
+}
+
+// Rundgang über Hof, Gutshof, Park und Allee (auf Wegen und Rasen, an Gebäuden vorbei)
+const GUIDE_ROUTE=[[6,-10],[14,-18],[40,-18],[62,-14],[104,-10],[110,-20],[146,-18],[150,10],[150,32],
+                   [118,36],[80,36],[66,66],[60,95],[10,95],[-5,118],[-5,136],[-5,104],[-2,90],[-16,60],
+                   [-16,12],[-14,-6]];
+
+function updateGuide(dt){
+  if(!guide)return;
+  const ud=guide.userData;
+  const pdist=Math.hypot(guide.position.x-pos.x, guide.position.z-pos.z);
+  const talking = dialogOpen && pdist<14;
+  if(talking){
+    // dem Gast zuwenden, ruhig stehen, leicht gestikulieren
+    const want=Math.atan2(pos.x-guide.position.x, pos.z-guide.position.z);
+    let d=want-guide.rotation.y; while(d>Math.PI)d-=6.283; while(d<-Math.PI)d+=6.283;
+    guide.rotation.y+=d*Math.min(1,dt*6);
+    ud.legs[0].rotation.x=ud.legs[1].rotation.x=0;
+    ud.arms[0].rotation.x=Math.sin(tAcc*2.2)*.22-.12;
+    ud.arms[1].rotation.x=Math.sin(tAcc*2.2+1.1)*.16-.08;
+    guide.position.y=0; return;
+  }
+  if(guidePause>0){ guidePause-=dt;
+    ud.legs[0].rotation.x=ud.legs[1].rotation.x=0;
+    ud.arms[0].rotation.x=ud.arms[1].rotation.x=0; guide.position.y=0; return; }
+  const tgt=GUIDE_ROUTE[guideWp];
+  const dx=tgt[0]-guide.position.x, dz=tgt[1]-guide.position.z;
+  const dist=Math.hypot(dx,dz);
+  if(dist<1.4){ guideWp=(guideWp+1)%GUIDE_ROUTE.length; guidePause=1.2+Math.random()*2.6; return; }
+  const sp=1.55;
+  guide.position.x+=dx/dist*sp*dt; guide.position.z+=dz/dist*sp*dt;
+  const want=Math.atan2(dx,dz);
+  let d=want-guide.rotation.y; while(d>Math.PI)d-=6.283; while(d<-Math.PI)d+=6.283;
+  guide.rotation.y+=d*Math.min(1,dt*4);
+  const sw=Math.sin(tAcc*5.4)*.52;
+  ud.legs[0].rotation.x=sw; ud.legs[1].rotation.x=-sw;
+  ud.arms[0].rotation.x=-sw*.75; ud.arms[1].rotation.x=sw*.75;
+  guide.position.y=Math.abs(Math.sin(tAcc*5.4))*.035;
+}
+
+// ---- Was der Gutsführer je nach Standort erzählen kann -------------------
+const GUIDE_INTRO='Guten Tag! Ich zeige hier Gästen das Gut. Fragen Sie mich ruhig etwas – wir stehen gerade bei %s.';
+const TOPICS={
+ 'Kaiserbrunnen':[
+  ['Der Name','Der Brunnen erinnert an die Besuche Kaiser Wilhelms II., der hier in Liebenberg oft und gern zu Gast war. Er steht seither als Mittelpunkt im Schlosshof.'],
+  ['Die Haube','Die geschwungene Haube ist aus Kupfer und hat über die Jahrzehnte ihre grüne Patina bekommen. Vier Sandsteinpfeiler tragen sie, unten ist eine Kartusche in den Stein gearbeitet.'],
+  ['Der Hof','Um den Brunnen herum schließt sich der Schlosshof: das Schloss im Süden, das lange Inspektorenhaus im Norden, die Kirche an der Nordostecke und die Nordische Halle im Osten.']],
+ 'Schloss':[
+  ['Die Anfänge','Liebenberg wird 1267 zum ersten Mal urkundlich erwähnt. Was Sie heute sehen, trägt aber vor allem die Handschrift der späteren Umbauten – das Haus ist über Jahrhunderte gewachsen statt in einem Zug gebaut worden.'],
+  ['Die Eulenburgs','Das Gut gehörte der Familie zu Eulenburg. Philipp Fürst zu Eulenburg war ein enger Vertrauter Kaiser Wilhelms II. – deshalb ging hier zeitweise der Hof ein und aus. Auch Theodor Fontane hat Liebenberg beschrieben.'],
+  ['Die Architektur','Achten Sie auf das Dach: Schiefer, darauf Gauben im Wechsel von Dreiecks- und Volutengiebeln, jede mit Aufsätzen. In der Mitte der Hofturm mit Glockenstube und Achtkanthelm, darunter das dreibogige Portal.'],
+  ['Heute','Das Schloss ist heute Hotel mit 45 Zimmern und steht unter Denkmalschutz – rund 3.900 Quadratmeter Geschossfläche. Träger ist die DKB Stiftung.']],
+ 'Nordische Halle':[
+  ['Das Gebäude','Die Nordische Halle fasst den Hof nach Osten – gut 1.700 Quadratmeter. Die hohen Rundbogenfenster und die runden Ochsenaugen darüber geben ihr den besonderen Rhythmus.'],
+  ['Der Efeu','Die Fassade ist über die Jahre zugewachsen. Im Sommer verschwindet fast die ganze Wand hinter dem Grün, im Herbst färbt es sich und gibt die Fenster wieder frei.']],
+ 'Feldsteinkirche':[
+  ['Der Bau','Unten Feldstein, oben Backstein – daran sieht man, dass in zwei Etappen gebaut wurde. Der Turm trägt Staffelgiebel und eine Uhr, ins Schiff führt ein Rundbogenportal über ein paar Stufen.'],
+  ['Feldstein','Die Findlinge stammen aus der Eiszeit und lagen auf den Feldern ringsum. Man hat sie gespalten und vermauert – deshalb sieht in der Mark keine Feldsteinkirche aus wie die andere.'],
+  ['Heute','Die Kirche ist Denkmal und gehört zum Ensemble. Getraut wird hier auch heute noch – mitten im Hof, ein paar Schritte vom Schloss.']],
+ 'Inspektorenhaus':[
+  ['Der Inspektor','Der Gutsinspektor führte die Wirtschaft: Felder, Vieh, Gesinde, Abrechnung. Dass sein Haus so lang ist und den ganzen Hof nach Norden fasst, sagt einiges über die Bedeutung des Postens.'],
+  ['Das Haus','Über 2.100 Quadratmeter Geschossfläche, Denkmal, mit Feldsteinsockel und hohen Schornsteinen. Heute wird hier die Geschichte des Guts erzählt.']],
+ 'Rinderstall':[
+  ['Der Stall','Gut 2.280 Quadratmeter unter einem Dach – das war Landwirtschaft im großen Maßstab. Die Reihe der Tore an der Längsseite verrät, wie der Betrieb organisiert war.'],
+  ['Heute','Der Stall ist Denkmal und heute der große Veranstaltungsort: bis zu 260 Gäste finden hier Platz, für Tagungen ebenso wie für Feste.']],
+ 'Gutshof':[
+  ['Der Wirtschaftshof','Hier lag die Arbeit: Ställe, Scheunen, Remisen, Werkstätten. Rund um den weiten Hof reihen sich Rinderstall, Fitness-Scheune, Stall mit Freilaufgehege, Scheune 9 und der lange Garagenriegel.'],
+  ['Schloss und Gut','Das ist das Prinzip eines Gutshofs: vorn das Herrenhaus mit Park, dahinter der Wirtschaftshof. Beides gehört zusammen – ohne den Hof hätte es das Schloss nie gegeben.']],
+ 'Kutscherhaus':[
+  ['1903','Die Jahreszahl steht im Giebel – da wurde gebaut. Drei Rundbogen-Einfahrten nebeneinander, damit die Wagen hinein und hinaus konnten, ohne zu rangieren.'],
+  ['Das Material','Sehen Sie sich die Bögen an: grob behauene Feldsteine als Keile, darüber Putz, die Fenster mit roten Ziegelgewänden gerahmt. Und oben die fünf hohen Backsteinschornsteine.'],
+  ['Kutschen','Unten standen Wagen und Pferde, oben wohnte das Personal – daher die vielen Schornsteine. Heute sind in den Räumen Ateliers untergebracht.']],
+ 'Musikscheune':[
+  ['Die Scheune','Am Ostende des Guts, knapp 500 Quadratmeter, aber mit 3.683 Kubikmetern sehr hoch – eine Scheune hat eben Luft nach oben. Genau das macht sie für Musik brauchbar.']],
+ 'Teehaus':[
+  ['Das kleinste Denkmal','61 Quadratmeter – das kleinste geschützte Gebäude auf dem Gelände. Ein Gartenhaus zum Verweilen, nicht zum Wohnen.'],
+  ['Die Lindenallee','Davor die doppelte Reihe geschnittener Linden. Solche Alleen wurden gepflanzt, um dem Blick eine Richtung zu geben – hier führt sie vom Teehaus hinunter zum Lindenhaus.']],
+ 'Lindenhaus':[
+  ['Am Ende der Allee','458 Quadratmeter, Denkmal, und genau auf die Achse der Lindenallee gesetzt. Vom Teehaus schauen Sie geradewegs hierher.']],
+ 'Schlossteich':[
+  ['Der Park','Ein Landschaftspark: nichts steht zufällig. Wiesen, Baumgruppen und der Teich sind so gesetzt, dass sich beim Gehen immer neue Bilder ergeben.'],
+  ['Der Teich','Bei stillem Wetter spiegelt sich das Schloss im Wasser. Früh am Morgen, wenn der Nebel über der Wiese steht, ist das der schönste Blick auf dem ganzen Gut.']],
+ 'Jägerhäuser':[
+  ['Die Torhäuser','Zwei kleine Häuser, zusammen nur 84 Quadratmeter, links und rechts der Zufahrt. Wer hier durchfuhr, sollte merken: jetzt beginnt das Gut.'],
+  ['Die Allee','Dahinter führt die Eichenallee mit ihren Laternen weiter zum Hof. Die Feldsteinmauern mit der Ziegelabdeckung setzen die Linie nach beiden Seiten fort.']],
+ 'Seehaus':[
+  ['Am See','Das Seehaus liegt ein gutes Stück vom Schloss entfernt am Großen Lankesee, mitten im Wald. Gut 3.400 Quadratmeter, mit Arkaden zur Zufahrtsseite und eigenem Seezugang.'],
+  ['Heute','18 Doppelzimmer, dazu Räume für Feiern. Wer hier heiratet, hat den See vor der Tür und ist trotzdem in wenigen Minuten am Schloss.']]
+};
+const TOPICS_ALLGEMEIN=[
+ ['Das Ensemble','Liebenberg ist kein einzelnes Haus, sondern ein ganzes Gut: Schloss, Kirche, Wirtschaftshof, Park, dazu das Seehaus am Lankesee. Fast alles davon steht unter Denkmalschutz.'],
+ ['Die Landschaft','Wir sind im Löwenberger Land, rund eine Stunde nördlich von Berlin. Kiefern, Eichen, Seen und Felder – typische Mark Brandenburg.'],
+ ['Wohin zuerst?','Wenn Sie wenig Zeit haben: der Schlosshof mit dem Kaiserbrunnen, dann durch den Park zur Lindenallee, und zum Schluss hinüber zum Gutshof mit dem Rinderstall.']];
+
+function nearestBuilding(x,z){ let best=null,bd=1e9;
+  for(const p of pois){ if(!TOPICS[p.name])continue;
+    const d=Math.hypot(p.x-x,p.z-z); if(d<bd){bd=d;best=p;} }
+  return (best&&bd<52)?best.name:null; }
+
+function openDialog(){
+  if(dialogOpen)return; dialogOpen=true; guideTopic=0;
+  if(document.pointerLockElement)document.exitPointerLock();
+  const where=nearestBuilding(guide.position.x,guide.position.z);
+  const list=where?TOPICS[where]:TOPICS_ALLGEMEIN;
+  document.getElementById('talkWhere').textContent=where?('am '+where):'auf dem Gelände';
+  document.getElementById('talkText').textContent=GUIDE_INTRO.replace('%s',where||'irgendwo auf dem Gut');
+  const box=document.getElementById('talkTopics'); box.innerHTML='';
+  list.forEach((t,i)=>{ const b=document.createElement('button');
+    b.innerHTML='<i>'+(i+1)+'</i>'+t[0];
+    b.onclick=()=>pickTopic(list,i);
+    box.appendChild(b); });
+  document.getElementById('talk').classList.add('show');
+}
+function pickTopic(list,i){
+  const btns=document.getElementById('talkTopics').children;
+  for(let k=0;k<btns.length;k++)btns[k].classList.toggle('on',k===i);
+  document.getElementById('talkText').textContent=list[i][1];
+}
+function closeDialog(){ if(!dialogOpen)return; dialogOpen=false;
+  document.getElementById('talk').classList.remove('show');
+  if(!TOUCH)renderer.domElement.requestPointerLock(); }
+
+// sky ----------------------------------------------------------------------
+function makeSky(){const geo=new THREE.SphereGeometry(600,24,16);
+  const m=new THREE.ShaderMaterial({side:THREE.BackSide,uniforms:{top:{value:new THREE.Color(0x86b6e0)},bot:{value:new THREE.Color(0xf0d8b0)},off:{value:18},exp:{value:.7}},
+    vertexShader:`varying vec3 vp;void main(){vp=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`uniform vec3 top;uniform vec3 bot;uniform float off;uniform float exp;varying vec3 vp;
+      void main(){float h=normalize(vp+vec3(0.,off,0.)).y;float t=max(pow(max(h,0.),exp),0.);gl_FragColor=vec4(mix(bot,top,t),1.);}`});
+  sky=new THREE.Mesh(geo,m);scene.add(sky);
+  const cvs=document.createElement('canvas');cvs.width=cvs.height=128;const cx=cvs.getContext('2d');
+  const gr=cx.createRadialGradient(64,64,4,64,64,64);gr.addColorStop(0,'rgba(255,250,235,1)');gr.addColorStop(.3,'rgba(255,225,170,.9)');gr.addColorStop(1,'rgba(255,220,160,0)');
+  cx.fillStyle=gr;cx.fillRect(0,0,128,128);
+  sun=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cvs),transparent:true,depthWrite:false,fog:false,blending:THREE.AdditiveBlending}));
+  sun.scale.set(70,70,1);scene.add(sun);}
+const PRESETS={
+  golden:{name:'Goldene Stunde',top:0x7fa9d6,bot:0xf3cd93,sp:[-170,60,-130],sc:0xffd6a0,si:1.15,hs:0xffe3c0,hg:0x6b7a3e,hi:.6,fog:0xf0d4a4,fn:150,ff:520},
+  tag:{name:'Heller Tag',top:0x5f97d8,bot:0xcfe3ef,sp:[-70,200,-50],sc:0xfff3e0,si:1.3,hs:0xcfe6ff,hg:0x7c8a4e,hi:.8,fog:0xd2e2ec,fn:180,ff:560},
+  nebel:{name:'Morgennebel',top:0xd9c6cf,bot:0xf1dbdf,sp:[-160,45,-160],sc:0xffe8de,si:.65,hs:0xf0e0e6,hg:0x7a8060,hi:.75,fog:0xe6d6db,fn:45,ff:230}
+};
+let pKeys=Object.keys(PRESETS),pIdx=0;
+function applyPreset(k){const p=PRESETS[k];sky.material.uniforms.top.value.setHex(p.top);sky.material.uniforms.bot.value.setHex(p.bot);
+  sunLight.position.set(p.sp[0],p.sp[1],p.sp[2]);sunLight.color.setHex(p.sc);sunLight.intensity=p.si;
+  hemi.color.setHex(p.hs);hemi.groundColor.setHex(p.hg);hemi.intensity=p.hi;
+  scene.fog.color.setHex(p.fog);scene.fog.near=p.fn;scene.fog.far=p.ff;
+  sun.position.set(p.sp[0]*2.5,p.sp[1]*2.5,p.sp[2]*2.5);sun.material.opacity=k==='nebel'?.5:1;
+  if(water)water.material.opacity=k==='nebel'?.72:.9;
+  document.getElementById('presetName').textContent=p.name;}
+
+// ================= BUILD WORLD ============================================
+function init(){
+  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,TOUCH?1.5:2));
+  renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  document.getElementById('app').appendChild(renderer.domElement);
+  scene=new THREE.Scene();scene.fog=new THREE.Fog(0xf0d4a4,150,520);
+  camera=new THREE.PerspectiveCamera(66,innerWidth/innerHeight,.1,800);clock=new THREE.Clock();
+  initMat();makeSky();
+  hemi=new THREE.HemisphereLight(0xffe3c0,0x6b7a3e,.55);scene.add(hemi);
+  scene.add(new THREE.AmbientLight(0xffffff,.28));
+  sunLight=new THREE.DirectionalLight(0xffd6a0,1.15);sunLight.castShadow=true;sunLight.shadow.mapSize.set(TOUCH?1024:2048,TOUCH?1024:2048);
+  const sc=sunLight.shadow.camera;sc.near=1;sc.far=460;sc.left=-120;sc.right=120;sc.top=120;sc.bottom=-120;sunLight.shadow.bias=-0.0004;
+  scene.add(sunLight,sunLight.target);
+
+  // ground + ground cover
+  box(700,.1,700,mat(0x6f7f42,1),0,-.05,0).receiveShadow=true;
+  const gravel=mat(0xcdb98d,1);
+  addGround(gravel,13,-6,54,42);            // Schlosshof mit Kaiserbrunnen
+  addGround(gravel,64,-8,70,14);            // Weg Schlosshof -> Gutshof
+  addGround(gravel,130,4,132,86);           // Gutshof / Veranstaltungsfläche
+  addGround(gravel,-5,100,9,90);            // Lindenallee-Weg
+  addGround(gravel,60,96,150,7);            // Parkweg quer
+  addGround(gravel,-66,105,16,60);          // Parkplätze / Zufahrt
+  addGround(gravel,-150,-172,46,16);        // Vorfahrt Seehaus
+  addGround(gravel,-100,-11,150,9);         // Westzufahrt / Eichenallee
+
+  buildSchloss();
+  buildKaiserbrunnen();
+  buildChurch();
+  buildHofWest();
+  buildGutshof();
+  buildPark();
+  buildSeehaus();
+  buildParkAndAllee();
+  scatterTrees();
+
+  // agents
+  carriage=makeCarriage();
+  for(let i=0;i<7;i++)chickens.push(makeChicken(rnd(160,180),rnd(-6,10)));
+  deer.push(makeDeer(60,150));deer.push(makeDeer(90,170));
+  balloon=makeBalloon();makeClouds();
+  guide=makeGuide();
+
+  buildPOIs();
+  applyPreset('golden');
+  foundCount=1; markFound('Kaiserbrunnen'); updateCounter();
+  mmCtx=document.getElementById('minimap').getContext('2d');
+  setupInput();
+}
+
+function addGround(m,x,z,w,d,rotY){const g=new THREE.Mesh(new THREE.PlaneGeometry(w,d),m);g.rotation.x=-Math.PI/2;if(rotY)g.rotation.z=rotY;g.position.set(x,.02,z);g.receiveShadow=true;scene.add(g);}
+
+function attachFacade(panel,x,y,z,rotY){panel.position.set(x,y,z);panel.rotation.y=rotY||0;scene.add(panel);}
+
+// ---- Schloss (center). Ehrenhof-Fassade nach Norden (-Z), Park nach Süden (+Z)
+
+// ---------- echte 3D-Architekturdetails (statt nur gemalter Textur) --------
+// Fassade mit plastischen Fenstern: Rahmen + vertieftes Glas + Sims
+function windows3D(cx,cy,cz,rotY,W,H,cols,rows,o){
+  o=o||{}; const g=new THREE.Group();
+  const frameM = o.frameMat || MAT.white;
+  const glassM = new THREE.MeshStandardMaterial({color:o.glass||0x2e3945,roughness:.35,metalness:.1});
+  const litM   = new THREE.MeshStandardMaterial({color:0xffc870,emissive:0xffab4a,emissiveIntensity:.8,roughness:.6});
+  const padx = W*0.06, cw=(W-padx*2)/cols, rh=H/rows;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const lx = -W/2+padx+c*cw+cw/2;
+    const ly = H/2 - (r*rh+rh/2);
+    const arch = o.arch && r===rows-1;
+    const ww = Math.min(cw*0.50, 1.5), wh = Math.min(rh*0.62, arch?3.4:2.3);
+    // Laibung (dunkle Vertiefung)
+    const rev=new THREE.Mesh(new THREE.BoxGeometry(ww,wh,.30),glassM);
+    rev.position.set(lx,ly,-0.02); g.add(rev);
+    // Sprossenkreuz
+    const bar1=new THREE.Mesh(new THREE.BoxGeometry(.07,wh,.10),frameM);bar1.position.set(lx,ly,.14);g.add(bar1);
+    const bar2=new THREE.Mesh(new THREE.BoxGeometry(ww,.07,.10),frameM);bar2.position.set(lx,ly,.14);g.add(bar2);
+    // Rahmen (4 Leisten)
+    const t=.16;
+    [[0,wh/2+t/2,ww+t*2,t],[0,-wh/2-t/2,ww+t*2,t],[-ww/2-t/2,0,t,wh],[ww/2+t/2,0,t,wh]].forEach(p=>{
+      const b=new THREE.Mesh(new THREE.BoxGeometry(p[2],p[3],.22),frameM);b.position.set(lx+p[0],ly+p[1],.10);g.add(b);});
+    // Fensterbank
+    const sill=new THREE.Mesh(new THREE.BoxGeometry(ww+t*3,.14,.34),o.sillMat||MAT.stone);
+    sill.position.set(lx,ly-wh/2-t,.12); g.add(sill);
+    if(arch){ // Rundbogen aus Segmenten
+      for(let a=0;a<9;a++){const ang=Math.PI*(a/8);
+        const seg=new THREE.Mesh(new THREE.BoxGeometry(.26,.26,.24),frameM);
+        seg.position.set(lx+Math.cos(ang)*(ww/2+t/2), ly+wh/2+t/2+Math.sin(ang)*(ww/2+t/2), .12);
+        seg.rotation.z=ang; g.add(seg);} }
+    if(o.lit && Math.random()<o.lit){ const gl=new THREE.Mesh(new THREE.BoxGeometry(ww*.96,wh*.96,.06),litM);
+      gl.position.set(lx,ly,.04); g.add(gl); }
+  }
+  // Lisenen / Pilaster
+  if(o.pilaster){ for(let i=0;i<=cols;i++){ const lx=-W/2+padx+i*cw;
+    const p=new THREE.Mesh(new THREE.BoxGeometry(.55,H,.22),frameM); p.position.set(lx,0,.08); g.add(p);} }
+  // Gurtgesims zwischen den Geschossen
+  if(rows>1){ for(let r=1;r<rows;r++){ const ly=H/2-r*rh;
+    const b=new THREE.Mesh(new THREE.BoxGeometry(W,.22,.26),frameM); b.position.set(0,ly,.10); g.add(b);} }
+  g.position.set(cx,cy,cz); g.rotation.y=rotY||0; (o.parent||scene).add(g); return g;
+}
+// Hauptgesims unter der Traufe (umlaufend)
+function cornice(cx,cy,cz,W,D,o){ o=o||{}; const g=new THREE.Group(); const m=o.mat||MAT.white;
+  const t=o.t||.45, ov=o.ov||.45;
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(W+ov*2,t,D+ov*2),m));
+  const g2=new THREE.Mesh(new THREE.BoxGeometry(W+ov,t*.6,D+ov),m); g2.position.y=-t*.7; g.add(g2);
+  g.position.set(cx,cy,cz); scene.add(g); return g; }
+// Eckquaderung
+function quoins(cx,cz,W,D,H,m){ m=m||MAT.white;
+  [[-W/2,-D/2],[W/2,-D/2],[W/2,D/2],[-W/2,D/2]].forEach(p=>{
+    for(let y=.6;y<H-.6;y+=1.5){ const b=new THREE.Mesh(new THREE.BoxGeometry(1.5,.9,1.5),m);
+      b.position.set(cx+p[0],y,cz+p[1]); scene.add(b);} }); }
+function chimney(x,y,z,h,m){ const b=box(1.1,h,1.1,m||BRICK(),x,y+h/2,z);
+  const cap=new THREE.Mesh(new THREE.BoxGeometry(1.5,.28,1.5),MAT.stone);cap.position.set(x,y+h,z);scene.add(cap);return b; }
+// Volutengiebel (geschwungener Ziergiebel wie am Westende)
+function scrollGable(x,y,z,w,h,rotY){ const g=new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(w,h,.7),MAT.creamL));
+  for(let i=0;i<4;i++){ const s=(w/2)*(1-i*0.22);
+    const b=new THREE.Mesh(new THREE.BoxGeometry(s*2,.55,.85),MAT.white); b.position.y=h/2+i*.6; g.add(b);}
+  const win=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.6,.3),new THREE.MeshStandardMaterial({color:0x2e3945,roughness:.4}));
+  win.position.set(0,h*0.1,.42); g.add(win);
+  finialLocal(g,0,h/2+2.6,0,1.0);
+  g.position.set(x,y,z); g.rotation.y=rotY||0; scene.add(g); return g; }
+// schlanker Spitzturm mit Laterne (wie am Schloss)
+function spireTurret(x,z,baseY,side,bodyH,spireH){ const g=new THREE.Group();
+  const b=new THREE.Mesh(new THREE.BoxGeometry(side,bodyH,side),MAT.creamL);b.position.y=bodyH/2;b.castShadow=true;g.add(b);
+  const c=new THREE.Mesh(new THREE.BoxGeometry(side+.5,.4,side+.5),MAT.white);c.position.y=bodyH;g.add(c);
+  const sp=new THREE.Mesh(new THREE.ConeGeometry(side*0.85,spireH,4),MAT.slate);
+  sp.position.y=bodyH+spireH/2;sp.rotation.y=Math.PI/4;sp.castShadow=true;g.add(sp);
+  const nd=new THREE.Mesh(new THREE.SphereGeometry(side*.16,10,8),MAT.goldM);nd.position.y=bodyH+spireH;g.add(nd);
+  const pin=new THREE.Mesh(new THREE.ConeGeometry(side*.07,spireH*.22,8),MAT.goldM);pin.position.y=bodyH+spireH+spireH*.13;g.add(pin);
+  g.position.set(x,baseY,z);scene.add(g);return g; }
+
+/* =========================================================================
+   Gebäudestellung nach Übersichtslageplan Bestand AV001, M 1:1000
+   (Bau-Consult Hermsdorf, 17.04.2026). Ursprung = Kaiserbrunnen (0/0),
+   +X = Planrichtung Ost, +Z = Planrichtung Süd. Maße in Metern.
+   ========================================================================= */
+function rotBlock(x,z,w,d,rot){ rot=rot||0;
+  const c=Math.abs(Math.cos(rot)), si=Math.abs(Math.sin(rot));
+  addBlock(x,z,c*w+si*d, si*w+c*d); }
+
+// Allzweck-Baukörper: Sockel, Gesims, Dach, plastische Fenster
+function simpleBuilding(o){
+  const g=new THREE.Group(); const w=o.w,d=o.d,h=o.h;
+  const body=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),o.mat||MAT.cream);
+  body.position.y=h/2;body.castShadow=true;body.receiveShadow=true;g.add(body);
+  if(o.socle){const sc=new THREE.Mesh(new THREE.BoxGeometry(w+.25,1.6,d+.25),FIELD());sc.position.y=.8;g.add(sc);}
+  const cor=new THREE.Mesh(new THREE.BoxGeometry(w+.7,.34,d+.7),MAT.white);cor.position.y=h;g.add(cor);
+  const rh=o.rh||Math.min(w,d)*0.42;
+  const roof = o.roof==='gable' ? gableRoof(w,d,rh,o.roofMat||MAT.tile,(w>=d?'x':'z'),.55)
+                                : hipRoof(w,d,rh,o.roofMat||MAT.tile,.6);
+  roof.position.y=h+.2; g.add(roof);
+  const cols=o.cols||Math.max(2,Math.round(w/4.2)), rows=o.rows||Math.max(1,Math.round((h-1.5)/3.6));
+  windows3D(0,h/2+.3,d/2+.10,0,w-2,h-1.8,cols,rows,{parent:g,lit:o.lit,arch:o.arch,frameMat:o.frameMat});
+  windows3D(0,h/2+.3,-d/2-.10,Math.PI,w-2,h-1.8,cols,rows,{parent:g,lit:(o.lit||0)*.5,arch:o.arch,frameMat:o.frameMat});
+  if(o.doors){ for(let i=0;i<o.doors;i++){ const dx=-w/2+w*(i+.5)/o.doors;
+    const t=new THREE.Mesh(new THREE.BoxGeometry(Math.min(4,w/o.doors*.55),4.2,.4),mat(0x5f452c));
+    t.position.set(dx,2.1,d/2+.05); g.add(t);} }
+  if(o.chimney) chimneyLocal(g,w*0.25,h+rh*0.6,0,2.4);
+  g.position.set(o.x,0,o.z); g.rotation.y=o.rot||0; scene.add(g);
+  rotBlock(o.x,o.z,w,d,o.rot);
+  return g;
+}
+function weathervane(x,z,y){const g=new THREE.Group();
+  const rod=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,2.6,6),MAT.goldM);rod.position.y=1.3;g.add(rod);
+  const arrow=new THREE.Mesh(new THREE.BoxGeometry(1.5,.28,.06),MAT.goldM);arrow.position.y=2.3;g.add(arrow);
+  const tip=new THREE.Mesh(new THREE.ConeGeometry(.2,.5,6),MAT.goldM);tip.rotation.z=-Math.PI/2;tip.position.set(.95,2.3,0);g.add(tip);
+  g.position.set(x,y,z);scene.add(g);return g;}
+// Pyramidenturm mit rotem Ziegeldach (Ostende, neben der Nordischen Halle)
+function pyramidTower(x,z,side,h){const g=new THREE.Group();
+  const b=new THREE.Mesh(new THREE.BoxGeometry(side,h,side),MAT.creamL);b.position.y=h/2;b.castShadow=true;g.add(b);
+  const r=new THREE.Mesh(new THREE.ConeGeometry(side*.82,side*1.25,4),MAT.tile);
+  r.position.y=h+side*.62;r.rotation.y=Math.PI/4;r.castShadow=true;g.add(r);
+  windows3D(0,h*.62,side/2+.08,0,side-1.4,h*.5,2,2,{parent:g,lit:.15});
+  g.position.set(x,0,z);scene.add(g);addBlock(x,z,side,side);return g;}
+function chimneyLocal(p,x,y,z,hh){const b=new THREE.Mesh(new THREE.BoxGeometry(1,hh,1),BRICK());
+  b.position.set(x,y+hh/2,z);p.add(b);
+  const c=new THREE.Mesh(new THREE.BoxGeometry(1.35,.26,1.35),MAT.stone);c.position.set(x,y+hh,z);p.add(c);}
+
+// ---- 01a Schloss (Denkmal) + 01b Nordische Halle ------------------------
+function buildSchloss(){
+  const H=13;
+  // Hauptbau Nordflügel: Mitte (11.1 / 24.8), 38.7 x 13.3
+  box(38.7,H,13.3,MAT.cream,11.1,H/2,24.8);
+  box(39,2.2,13.6,FIELD(),11.1,1.1,24.8);
+  addBlock(11.1,24.8,38.7,13.3);
+  quoins(11.1,24.8,38.7,13.3,H);
+  cornice(11.1,H,24.8,38.7,13.3,{t:.5,ov:.5});
+  place(hipRoof(38.7,13.3,9,MAT.slate,.9),11.1,H+.5,24.8);
+  // Hoffassade (Norden) und Parkfassade (Süden)
+  windows3D(11.1,H/2+.4,24.8-13.3/2-.10,Math.PI,35,H-2.6,8,2,{pilaster:true,lit:.18});
+  windows3D(11.1,H/2+.4,24.8+13.3/2+.10,0,35,H-2.6,8,2,{arch:true,lit:.30});
+  // Westflügel: Mitte (-0.6 / 37.5), 15.2 x 38.7
+  box(15.2,H,38.7,MAT.cream,-0.6,H/2,37.5); addBlock(-0.6,37.5,15.2,38.7);
+  box(15.5,2.2,39,FIELD(),-0.6,1.1,37.5);
+  cornice(-0.6,H,37.5,15.2,38.7,{t:.45,ov:.45});
+  place(hipRoof(15.2,38.7,8,MAT.slate,.8),-0.6,H+.5,37.5);
+  windows3D(-0.6-15.2/2-.10,H/2+.4,37.5,-Math.PI/2,35,H-2.6,8,2,{lit:.14});
+  windows3D(-0.6+15.2/2+.10,H/2+.4,37.5,Math.PI/2,35,H-2.6,8,2,{lit:.10});
+  // Ostflügel: Mitte (36.2 / 26.0), 11.4 x 31
+  box(11.4,H-1,31,MAT.cream,36.2,(H-1)/2,26); addBlock(36.2,26,11.4,31);
+  cornice(36.2,H-1,26,11.4,31,{t:.4,ov:.4});
+  place(hipRoof(11.4,31,7.5,MAT.slate,.7),36.2,H-.5,26);
+  windows3D(36.2+11.4/2+.10,(H-1)/2+.4,26,Math.PI/2,28,H-3.4,6,2,{lit:.12});
+  // Hofturm mit Glockenstube mittig über dem Portal (Bild 7)
+  hofTower(11.1,17.6,6.4,H+5.5,11);
+  weathervane(11.1,17.6,H+17.5);
+  portal3(11.1,17.9,0);
+  // Volutengiebel am Westende, Ziergauben im Wechsel
+  scrollGable(-6.5,H+3.4,18.3,7,5,Math.PI);
+  [-1,4,19,24].forEach((dx,i)=>dormer(dx,H,18.5,Math.PI,i%2?'scroll':'ped'));
+  [0,11,22].forEach((dx,i)=>dormer(dx,H,31.2,0,i%2?'ped':'scroll'));
+  spireTurret(31.6,26,H-1,4.2,6.5,9);
+  lantern(11.1,H+8.5,26,1.15);
+  chimney(2,H+7.5,27,3.2); chimney(20,H+7.5,23,3.2);
+  // Schlossterrasse: Mitte (18.4 / 49.5), 21.6 x 14.6
+  conservatory(14,44,15,5.2,6.4); addBlock(14,44,15,6.4);
+  box(21.6,.45,14.6,MAT.stone,18.4,.22,49.5).receiveShadow=true;
+  balustrade(18.4,56.8,21.6,0);
+  balustrade(7.6,49.5,14.6,Math.PI/2); balustrade(29.2,49.5,14.6,Math.PI/2);
+  for(let i=0;i<4;i++)box(6,.3,.9,MAT.stone,18.4,.15+i*.12,57.2+i*.5);
+  // 01b Nordische Halle: Mitte (29.5 / -5.3), 23.5 x 14 – Efeu-/Bogenfassade zum Hof
+  const nh=simpleBuilding({x:29.5,z:-5.3,w:23.5,d:14,h:9.5,roof:'gable',rh:5,
+    mat:MAT.creamL,cols:5,rows:2,arch:true,lit:.14});
+  ivyOn(29.5,-5.3,23.5,14,9.5);
+  // runde Ochsenaugen über den Bogenfenstern der Nordischen Halle
+  [-8,-4,0,4,8].forEach(dx=>{
+    const o=new THREE.Mesh(new THREE.CircleGeometry(.62,18),mat(0x2b3640));o.position.set(29.5+dx,7.2,-5.3+7.08);scene.add(o);
+    const r=new THREE.Mesh(new THREE.TorusGeometry(.7,.11,8,20),MAT.white);r.position.set(29.5+dx,7.2,-5.3+7.06);scene.add(r);});
+  pyramidTower(45,-2,8.6,14.5);
+}
+function ivyOn(x,z,w,d,h){ const m=mat(0x4d6a2e,1,true);
+  for(let i=0;i<90;i++){const s=.7+Math.random()*1.5;
+    const b=new THREE.Mesh(new THREE.IcosahedronGeometry(s,0),m);
+    const side=Math.random()<.5?1:-1;
+    b.position.set(x+(Math.random()-.5)*w, .6+Math.random()*(h-.5), z+side*(d/2+.25));
+    scene.add(b);} }
+
+function buildKaiserbrunnen(){ kaiserbrunnen(0,0); }
+
+// ---- 15 Kirche (Denkmal), Nordostecke des Schlosshofs -------------------
+function buildChurch(){
+  const tx=26, tz=-34, rot=-0.5;
+  const g=new THREE.Group();
+  const tower=new THREE.Mesh(new THREE.BoxGeometry(8,13,8),FIELD());tower.position.y=6.5;tower.castShadow=true;g.add(tower);
+  const upper=new THREE.Mesh(new THREE.BoxGeometry(8,8,8),BRICK());upper.position.y=17;upper.castShadow=true;g.add(upper);
+  const tr=hipRoof(8,8,4,MAT.tile,.25);tr.position.y=21;g.add(tr);
+  const cl=new THREE.Mesh(new THREE.CircleGeometry(1,20),mat(0xf3ede0));cl.position.set(0,16,4.06);g.add(cl);
+  // Staffelgiebel
+  [[1,4.06],[-1,-4.06]].forEach(p=>{let y=21;[[5.6,.8],[4.2,.8],[2.8,.8],[1.4,1.0]].forEach(st=>{
+    const b=new THREE.Mesh(new THREE.BoxGeometry(st[0],st[1],1.0),BRICK());b.position.set(0,y+st[1]/2,p[1]*0.92);g.add(b);y+=st[1];});});
+  // Portal + Stufen
+  const door=new THREE.Mesh(new THREE.BoxGeometry(2,3.4,.45),mat(0x4a3520));door.position.set(0,2.4,4.0);g.add(door);
+  for(let a=0;a<9;a++){const ang=Math.PI*(a/8);const seg=new THREE.Mesh(new THREE.BoxGeometry(.45,.45,.55),MAT.stone);
+    seg.position.set(Math.cos(ang)*1.3,4.1+Math.sin(ang)*1.3,4.0);seg.rotation.z=ang;g.add(seg);}
+  const st1=new THREE.Mesh(new THREE.BoxGeometry(3.4,.35,2.2),MAT.stone);st1.position.set(0,.18,5.4);g.add(st1);
+  // Schiff nach Nordosten
+  const nave=new THREE.Mesh(new THREE.BoxGeometry(10,9,17),FIELD());nave.position.set(0,4.5,-12.5);nave.castShadow=true;g.add(nave);
+  const nr=gableRoof(10,17,5,MAT.tile,'z',.45);nr.position.set(0,9,-12.5);g.add(nr);
+  windows3D(0,15.5,4.07,0,5.5,5,2,1,{parent:g,arch:true,glass:0x25303c,frameMat:MAT.stone});
+  windows3D(5.05,5,-12.5,Math.PI/2,15,5,3,1,{parent:g,arch:true,glass:0x25303c,frameMat:MAT.stone});
+  windows3D(-5.05,5,-12.5,-Math.PI/2,15,5,3,1,{parent:g,arch:true,glass:0x25303c,frameMat:MAT.stone});
+  g.position.set(tx,0,tz); g.rotation.y=rot; scene.add(g);
+  rotBlock(tx,tz,10,8,rot); rotBlock(tx+Math.sin(rot)*12.5,tz-Math.cos(rot)*12.5,10,17,rot);
+}
+
+// ---- 11 Inspektorenhaus (Nordseite des Hofs) + 10 Kastanienhaus --------
+function buildHofWest(){
+  simpleBuilding({x:-2,z:-39,w:14.6,d:51.7,h:11,roof:'gable',rh:6,mat:MAT.pink,
+    cols:4,rows:3,lit:.12,socle:true,chimney:true});
+  simpleBuilding({x:-27,z:-29,w:10.1,d:14.5,h:8,roof:'hip',rh:4.5,mat:MAT.creamL,cols:3,rows:2,lit:.10});
+  simpleBuilding({x:67,z:-26,w:9,d:9,h:5.5,roof:'hip',rh:3,mat:MAT.creamL,cols:2,rows:1,lit:.08});
+  simpleBuilding({x:-133,z:-49,w:7,d:7,h:3.4,roof:'hip',rh:2.6,mat:MAT.stone,cols:1,rows:1});
+}
+
+// ---- Gutshof: 07 Rinderstall, Scheunen, Ställe, Garagenriegel ----------
+function buildGutshof(){
+  const pl=mat(0xe0d5bb,1);
+  simpleBuilding({x:107,z:-40,w:54,d:28,h:7,roof:'gable',rh:7,mat:pl,roofMat:MAT.tile,
+    cols:11,rows:1,doors:3,lit:.07,frameMat:MAT.stone});                        // 07 Rinderstall
+  simpleBuilding({x:131,z:8.5,w:13.5,d:42.7,h:7,roof:'gable',rh:5,mat:pl,cols:3,rows:2,lit:.09}); // 06 Fitnessscheune
+  simpleBuilding({x:161,z:8.5,w:16,d:30,h:6,roof:'gable',rh:4.5,mat:pl,roofMat:MAT.greyRoof,cols:4,rows:1,lit:.06}); // 14 Stall
+  simpleBuilding({x:223,z:-26,w:24,d:22,h:6.5,roof:'gable',rh:5,mat:BRICK(),roofMat:MAT.tile,cols:5,rows:1,lit:.05}); // 19 Scheune 9
+  simpleBuilding({x:222,z:6,w:30,d:20,h:8,roof:'gable',rh:6,mat:pl,cols:6,rows:2,lit:.12});       // 13 Musikscheune
+  simpleBuilding({x:192,z:-32,w:15,d:12,h:5,roof:'gable',rh:3.4,mat:MAT.greyRoof,cols:3,rows:1}); // 20 Depot
+  simpleBuilding({x:159,z:56,w:81,d:10,h:4.6,roof:'gable',rh:3.4,mat:pl,roofMat:MAT.tile,cols:14,rows:1,doors:6}); // 05 Garagenriegel
+  buildKutscherhaus(103,46);                                                                          // 04 Kutscherhaus
+  simpleBuilding({x:50,z:48,w:22,d:13,h:7.5,roof:'hip',rh:5,mat:MAT.cream,cols:4,rows:2,lit:.14});     // 03 Jagd- & Waffensaal
+  simpleBuilding({x:223,z:39,w:16,d:12,h:4.4,roof:'gable',rh:3,mat:MAT.greyRoof,cols:3,rows:1});       // 17 Hochgaragen
+  // Freilaufgehege + Hühner
+  fence(170,2,26,20);
+  const ch=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.6,22,12),BRICK());ch.position.set(88,11,-30);ch.castShadow=true;scene.add(ch);addBlock(88,-30,2.6,2.6);
+}
+function fence(x,z,w,d){ const m=mat(0x6b5136,1);
+  for(let i=-w/2;i<=w/2;i+=3){ const p=new THREE.Mesh(new THREE.BoxGeometry(.16,1.3,.16),m);
+    p.position.set(x+i,.65,z-d/2);scene.add(p);
+    const p2=p.clone();p2.position.z=z+d/2;scene.add(p2);}
+  for(let i=-d/2;i<=d/2;i+=3){ const p=new THREE.Mesh(new THREE.BoxGeometry(.16,1.3,.16),m);
+    p.position.set(x-w/2,.65,z+i);scene.add(p);
+    const p2=p.clone();p2.position.x=x+w/2;scene.add(p2);} }
+
+// ---- 04 Kutscherhaus (1903) nach Frontalaufnahme --------------------------
+function buildKutscherhaus(x,z){
+  const W=31,D=13.5,H=6.4, g=new THREE.Group();
+  const putz=mat(0xf0dfae);                                   // warmes Creme-Gelb
+  const ziegel=mat(0x9c3b28,.9);                              // rote Ziegelgewände
+  const body=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),putz);body.position.y=H/2;
+  body.castShadow=true;body.receiveShadow=true;g.add(body);
+  // Feldsteinsockel mit hellem Fugenbild
+  const soc=new THREE.Mesh(new THREE.BoxGeometry(W+.3,1.5,D+.3),FIELD());soc.position.y=.75;g.add(soc);
+  // steiles rotes Walmdach
+  const roof=hipRoof(W,D,6.2,MAT.tile,.75);roof.position.y=H;g.add(roof);
+  // mittiger Zwerchgiebel mit Jahreszahl-Feld und Engelsfenster
+  const zg=new THREE.Mesh(new THREE.BoxGeometry(7.4,4.6,.8),putz);zg.position.set(0,H+2.3,D/2-.3);g.add(zg);
+  const zgr=gableRoof(7.4,1.1,3.3,MAT.tile,'x',.3);zgr.position.set(0,H+4.6,D/2-.3);g.add(zgr);
+  const luke=new THREE.Mesh(new THREE.BoxGeometry(1.3,1.7,.3),ziegel);luke.position.set(0,H+3.1,D/2+.14);g.add(luke);
+  const engel=new THREE.Mesh(new THREE.BoxGeometry(.9,1.2,.1),mat(0x8a6a2e,.5));engel.position.set(0,H+3.1,D/2+.28);g.add(engel);
+  // drei Rundbogen-Einfahrten mit Feldstein-Bogenkeilen
+  [-8.2,0,8.2].forEach((dx,i)=>{
+    const tor=new THREE.Mesh(new THREE.BoxGeometry(3.4,3.4,.5),mat(i===0?0x6d4a36:0x8a3f2a,.85));
+    tor.position.set(dx,1.7,D/2+.04);g.add(tor);
+    if(i!==0){const sp1=new THREE.Mesh(new THREE.BoxGeometry(.16,3.0,.12),mat(0xd8cdb6));
+      sp1.position.set(dx,1.7,D/2+.3);g.add(sp1);}
+    for(let k=0;k<11;k++){const ang=Math.PI*(k/10);
+      const keil=new THREE.Mesh(new THREE.BoxGeometry(.52,.52,.62),FIELD());
+      keil.position.set(dx+Math.cos(ang)*1.95,3.4+Math.sin(ang)*1.95,D/2+.04);keil.rotation.z=ang;g.add(keil);}});
+  // Obergeschossfenster mit roten Ziegelgewänden
+  [-11.5,-8.2,-3.4,3.4,8.2,11.5].forEach(dx=>{
+    const rev=new THREE.Mesh(new THREE.BoxGeometry(1.3,1.7,.26),mat(0x2c3640));rev.position.set(dx,5.0,D/2+.02);g.add(rev);
+    [[0,.98,1.75,.26],[0,-.98,1.75,.26],[-.78,0,.26,1.7],[.78,0,.26,1.7]].forEach(p=>{
+      const b=new THREE.Mesh(new THREE.BoxGeometry(p[2],p[3],.3),ziegel);b.position.set(dx+p[0],5.0+p[1],D/2+.06);g.add(b);});
+    const bar=new THREE.Mesh(new THREE.BoxGeometry(.07,1.7,.1),ziegel);bar.position.set(dx,5.0,D/2+.18);g.add(bar);});
+  // fünf hohe Backsteinschornsteine
+  [-13,-8,0,8,13].forEach((dx,i)=>{const hh=i===2?3.4:4.2;
+    const c=new THREE.Mesh(new THREE.BoxGeometry(1.0,hh,1.0),BRICK());c.position.set(dx,H+3.4+hh/2,0);c.castShadow=true;g.add(c);
+    const cap=new THREE.Mesh(new THREE.BoxGeometry(1.3,.3,1.3),BRICK());cap.position.set(dx,H+3.4+hh,0);g.add(cap);});
+  // Rückfassade schlicht
+  windows3D(0,4.6,-D/2-.10,Math.PI,W-4,3.4,7,1,{parent:g,lit:.08,frameMat:ziegel});
+  g.position.set(x,0,z);scene.add(g);addBlock(x,z,W,D);return g;
+}
+
+// ---- Park: 09 Teehaus, Lindenallee, 08 Lindenhaus, Schlossteich --------
+function buildPark(){
+  // 09 Teehaus (61 m²) – klein, am Kopf der Lindenallee
+  simpleBuilding({x:-12,z:102,w:9,d:7,h:4.2,roof:'hip',rh:3.2,mat:MAT.creamL,cols:3,rows:1,lit:.10});
+  const td=new THREE.Mesh(new THREE.BoxGeometry(1.4,2.6,.3),mat(0x5a4630));td.position.set(-12,1.3,105.6);scene.add(td);
+  // 08 Lindenhaus
+  simpleBuilding({x:0,z:158,w:22,d:16,h:8,roof:'hip',rh:5,mat:MAT.creamL,cols:5,rows:2,lit:.12,socle:true});
+  // Lindenallee: geschnittene Linden, Doppelreihe, z 64 .. 142
+  for(let z=64;z<=142;z+=6){ tree(-8.5,z,'lime'); tree(-1.5,z,'lime'); }
+  // Schlossteich
+  water=new THREE.Mesh(new THREE.CircleGeometry(13,28),
+    new THREE.MeshStandardMaterial({color:0x40657a,roughness:.18,metalness:.45,transparent:true,opacity:.92}));
+  water.rotation.x=-Math.PI/2; water.position.set(143,.07,112); scene.add(water); addBlock(143,112,22,18);
+  for(let i=0;i<10;i++){const a=i/10*6.28; reeds(143+Math.cos(a)*13.5,112+Math.sin(a)*13.5);}
+  // Bänke + Parkbäume
+  bench(40,70,0);bench(90,95,.5);bench(120,140,-.4);
+  // Zufahrt Parkweg / Parkplätze im Westen
+  for(let z=80;z<=110;z+=5)for(let i=0;i<2;i++)box(4.6,.05,2.2,mat(0xb9b2a4,1),-74+i*6,.03,z);
+}
+
+// ---- 21 Seehaus am Großen Lankesee (separates Planblatt, schematisch) --
+function buildSeehaus(){
+  const x=-150,z=-190, W=30,D=15, H=11;
+  box(W,H,D,MAT.creamL,x,H/2,z); box(W+.3,1.9,D+.3,FIELD(),x,.95,z); addBlock(x,z,W,D);
+  cornice(x,H,z,W,D,{t:.42,ov:.42}); quoins(x,z,W,D,H);
+  place(hipRoof(W,D,8,MAT.tile,.6),x,H+.3,z);
+  lantern(x,H+5,z,1.1);
+  windows3D(x,H/2+.4,z+D/2+.10,0,W-3,H-2.6,7,2,{lit:.20});
+  windows3D(x,H/2+.4,z-D/2-.10,Math.PI,W-3,H-2.6,7,2,{lit:.08});
+  // Arkadenportikus + Giebel nach Süden (Zufahrtsseite)
+  box(9,5.5,2.6,MAT.creamL,x,2.75,z+D/2+1.3);
+  windows3D(x,3.0,z+D/2+2.65,0,8.5,4.6,3,1,{arch:true,lit:.18});
+  const ped=gableRoof(9,1.4,3.2,MAT.creamL,'z',.2);place(ped,x,H,z+D/2+.7);
+  balustrade(x,z+D/2+2.7,8.5,0);
+  // Seitenflügel
+  simpleBuilding({x:x-19,z:z+2,w:11,d:10,h:7,roof:'hip',rh:4,mat:MAT.creamL,cols:3,rows:2,lit:.10});
+  simpleBuilding({x:x+19,z:z+2,w:11,d:10,h:7,roof:'hip',rh:4,mat:MAT.creamL,cols:3,rows:2,lit:.10});
+  flag(x-9,z+22);flag(x+9,z+22);
+  // Großer Lankesee dahinter (Norden)
+  const lake=new THREE.Mesh(new THREE.PlaneGeometry(150,90),
+    new THREE.MeshStandardMaterial({color:0x35566b,roughness:.2,metalness:.45,transparent:true,opacity:.9}));
+  lake.rotation.x=-Math.PI/2; lake.position.set(x-10,.06,z-75); scene.add(lake); addBlock(x-10,z-75,150,90);
+  for(let i=0;i<10;i++)reeds(x-60+i*12,z-30);
+  for(let i=0;i<50;i++){const a=Math.random()*6.28,r=55+Math.random()*45;
+    const px=x-10+Math.cos(a)*r, pz=z-75+Math.sin(a)*r*.8;
+    if(pz>z-32&&Math.abs(px-x)<40)continue;
+    if(insideBlock(px,pz,6))continue;
+    tree(px,pz,Math.random()<.55?'pine':'park');}
+}
+function reeds(x,z){for(let i=0;i<10;i++){const r=new THREE.Mesh(new THREE.ConeGeometry(.08,1.3+Math.random(),4),mat(0x7c8a3e));
+  r.position.set(x+(Math.random()-.5)*5,.7,z+(Math.random()-.5)*2.2);r.rotation.z=(Math.random()-.5)*.3;scene.add(r);}}
+function bench(x,z,rot){const g=new THREE.Group();const st=new THREE.Mesh(new THREE.BoxGeometry(2.2,.16,.6),MAT.wood);
+  st.position.y=.55;g.add(st);const bk=new THREE.Mesh(new THREE.BoxGeometry(2.2,.5,.12),MAT.wood);
+  bk.position.set(0,.85,-.24);g.add(bk);g.rotation.y=rot||0;g.position.set(x,0,z);scene.add(g);}
+function pillar(x,z){box(1.4,4.2,1.4,MAT.stone,x,2.1,z);const cap=new THREE.Mesh(new THREE.SphereGeometry(.85,12,10),MAT.stone);
+  cap.position.set(x,4.5,z);scene.add(cap);addBlock(x,z,1.5,1.5);}
+
+function lamp(x,z){const g=new THREE.Group();
+  const p=new THREE.Mesh(new THREE.CylinderGeometry(.09,.13,4.2,8),mat(0x20242a,.5));p.position.y=2.1;g.add(p);
+  const h=new THREE.Mesh(new THREE.BoxGeometry(.55,.75,.55),mat(0x20242a,.5));h.position.y=4.5;g.add(h);
+  const gl=new THREE.Mesh(new THREE.BoxGeometry(.4,.55,.4),
+    new THREE.MeshStandardMaterial({color:0xffe6b0,emissive:0xffc464,emissiveIntensity:.7,roughness:.5}));
+  gl.position.y=4.5;g.add(gl);
+  const cap=new THREE.Mesh(new THREE.ConeGeometry(.42,.34,4),mat(0x20242a,.5));cap.position.y=5.0;g.add(cap);
+  g.position.set(x,0,z);scene.add(g);return g;}
+
+// 02 Jägerhäuser: zwei kleine Torhäuser mit Rundbogen-Durchgang und Ochsenauge
+function gateHouse(x,z,mirror){const g=new THREE.Group();
+  const w=6,d=6,h=4.2;
+  const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),MAT.creamL);b.position.y=h/2;b.castShadow=true;g.add(b);
+  const r=hipRoof(w,d,2.6,MAT.tile,.45);r.position.y=h;g.add(r);
+  // Rundbogen-Durchgang zur Fahrbahnseite
+  const side=mirror?-1:1;
+  const arch=new THREE.Mesh(new THREE.BoxGeometry(2.4,2.6,.5),mat(0x6d5a3f));
+  arch.position.set(side*(w/2-1.6),1.3,d/2+.02);g.add(arch);
+  for(let a=0;a<9;a++){const ang=Math.PI*(a/8);const seg=new THREE.Mesh(new THREE.BoxGeometry(.34,.34,.5),MAT.creamL);
+    seg.position.set(side*(w/2-1.6)+Math.cos(ang)*1.2,2.6+Math.sin(ang)*1.2,d/2+.02);seg.rotation.z=ang;g.add(seg);}
+  // Ochsenauge
+  const ox=new THREE.Mesh(new THREE.CircleGeometry(.5,18),mat(0x2e3945));ox.position.set(-side*1.4,3.1,d/2+.06);g.add(ox);
+  const oxr=new THREE.Mesh(new THREE.TorusGeometry(.56,.09,8,20),MAT.white);oxr.position.set(-side*1.4,3.1,d/2+.05);g.add(oxr);
+  // Gitterfenster
+  const win=new THREE.Mesh(new THREE.BoxGeometry(1.1,1.3,.3),mat(0x2e3945));win.position.set(-side*1.4,1.6,d/2+.04);g.add(win);
+  g.position.set(x,0,z);scene.add(g);addBlock(x,z,w,d);return g;}
+function stoneWall(x,z,len,rotY){const g=new THREE.Group();
+  const w=new THREE.Mesh(new THREE.BoxGeometry(len,1.5,.7),FIELD());w.position.y=.75;w.castShadow=true;g.add(w);
+  const cap=new THREE.Mesh(new THREE.BoxGeometry(len,.22,.9),BRICK());cap.position.y=1.6;g.add(cap);
+  g.position.set(x,0,z);g.rotation.y=rotY||0;scene.add(g);return g;}
+
+function buildParkAndAllee(){
+  // Westzufahrt mit den Jägerhäusern (02) an der Bergsdorfer Straße
+  const gx=-168, gz=-11;
+  gateHouse(gx,gz-6,false); gateHouse(gx,gz+6,true);
+  stoneWall(gx,gz-16,14,0); stoneWall(gx,gz+16,14,0);
+  lamp(gx+7,gz-7); lamp(gx+7,gz+7); lamp(gx-7,gz-7); lamp(gx-7,gz+7);
+  // Eichenallee von der Zufahrt nach Osten zum Schlosshof
+  for(let x=gx+14;x<=-34;x+=11){ tree(x,gz-8,'allee'); tree(x,gz+8,'allee');
+    if((x-gx)%33<11){ lamp(x,gz-6.5); lamp(x,gz+6.5); } }
+  // Fahnen am Übergang zum Park
+  flag(4,14);flag(14,14);flag(24,14);
+  lamp(-14,6); lamp(30,14); lamp(-8,60); lamp(-8,120);
+}
+
+function scatterTrees(){
+  // Baumbestand: Park im Süden/Westen, Wald am Rand
+  const N=TOUCH?85:150;
+  for(let i=0;i<N;i++){
+    const x=rnd(-190,300), z=rnd(-230,230);
+    if(insideBlock(x,z,9))continue;
+    if(x>-16&&x<4&&z>58&&z<148)continue;            // Lindenallee frei
+    if(x>-14&&x<48&&z>-30&&z<20)continue;           // Schlosshof frei
+    if(x>60&&x<250&&z>-50&&z<62)continue;           // Gutshof frei
+    if(x>-10&&x<45&&z>18&&z<62)continue;            // Schlossterrasse frei
+    tree(x,z,Math.random()<.22?'pine':'park');}
+}
+
+function insideBlock(x,z,pad){for(const b of blockers){if(x>b.x1-pad&&x<b.x2+pad&&z>b.z1-pad&&z<b.z2+pad)return true;}return false;}
+
+// ---- POIs ----------------------------------------------------------------
+function addPoi(n,k,x,z,t){pois.push({name:n,kicker:k,x,z,text:t,found:false});}
+function markFound(name){const p=pois.find(p=>p.name===name);if(p)p.found=true;}
+function buildPOIs(){
+  addPoi('Kaiserbrunnen','Schlosshof',0,0,'Ihr Startpunkt im Schlosshof: der Kaiserbrunnen mit seiner geschwungenen Kupferhaube. Von hier fällt der Blick über den Hof auf das Schloss. Kaiser Wilhelm II. war hier oft zu Gast.');
+  addPoi('Schloss','01a · Denkmal',11,16,'Das Schlosshotel mit 45 Zimmern: Hauptbau zum Hof, Westflügel, Ostflügel und die Schlossterrasse mit Wintergarten zum Park. 3.937 m² Geschossfläche, seit 1267 Geschichte.');
+  addPoi('Nordische Halle','01b',30,-6,'Die Nordische Halle östlich des Hofes, efeubewachsen, mit den hohen Bogenfenstern – 1.705 m² direkt am Kaiserbrunnen.');
+  addPoi('Feldsteinkirche','15 · Denkmal',26,-30,'Die Kirche an der Nordostecke des Schlosshofs: Feldsteinsockel, Backsteinaufsatz mit Staffelgiebel und Turmuhr. Ort für Trauungen mitten im Ensemble.');
+  addPoi('Inspektorenhaus','11 · Denkmal',-2,-39,'Das lange Inspektorenhaus fasst den Hof nach Norden. 2.177 m² – heute Museum zur Geschichte des Guts, von Philipp Fürst zu Eulenburg bis heute.');
+  addPoi('Rinderstall','07 · Denkmal',107,-22,'Der historische Rinderstall am Gutshof: 2.281 m² unter einem Dach, heute Bühne für Tagungen und Feste mit bis zu 260 Gästen.');
+  addPoi('Gutshof','Veranstaltungsfläche',110,10,'Der weite Gutshof mit Veranstaltungsfläche, Fitness-Scheune, Stall und Streichelzoo, Freilaufgehege und dem langen Garagenriegel.');
+  addPoi('Musikscheune','13 · Denkmal',222,6,'Am Ostende des Guts die Musikscheune – 495 m², 3.683 m³ Rauminhalt. Daneben Scheune 9 und die Hochgaragen.');
+  addPoi('Teehaus','09 · Denkmal',-12,102,'Nur 61 m² – das kleinste Denkmal im Park, am Kopf der Lindenallee. Beliebt für den Sektempfang, wenn die Sonne über die Wiese wandert.');
+  addPoi('Lindenhaus','08 · Denkmal',0,158,'Am südlichen Ende der Lindenallee steht das Lindenhaus mit 458 m². Dazwischen die doppelte Reihe geschnittener Linden.');
+  addPoi('Schlossteich','18 · Parkflächen',143,112,'Der Schlossteich im Schlosspark. Draußen und drinnen: alles Natur – nachhaltig, regional, fühlbar.');
+  addPoi('Jägerhäuser','02 · Denkmal',-160,-11,'Die beiden kleinen Torhäuser an der Westzufahrt – zusammen nur 84 m². Dazwischen führt die Eichenallee mit ihren Laternen zum Schlosshof.');
+  addPoi('Seehaus','21 · Denkmal',-150,-172,'Am Großen Lankesee, ein gutes Stück vom Schloss entfernt: das Seehaus mit 3.435 m², Arkaden und eigenem Seezugang. Zauberhafte Hochzeiten und private Feiern.');
+}
+
+// ---- input / loop --------------------------------------------------------
+function setupInput(){const cv=renderer.domElement;
+  cv.addEventListener('click',()=>{if(!TOUCH&&started&&!dialogOpen&&!document.pointerLockElement)cv.requestPointerLock();});
+  document.addEventListener('pointerlockchange',()=>{const l=document.pointerLockElement===cv;document.getElementById('pause').style.display=(!TOUCH&&started&&!l&&!dialogOpen)?'flex':'none';});
+  document.addEventListener('mousemove',e=>{if(document.pointerLockElement!==cv)return;yaw-=e.movementX*CFG.SENS;pitch-=e.movementY*CFG.SENS;pitch=Math.max(-1.45,Math.min(1.45,pitch));});
+  addEventListener('keydown',e=>{keys[e.code]=true;
+    if(dialogOpen){
+      if(e.code==='Escape'){closeDialog();return;}
+      const n=parseInt(e.key,10);
+      if(n>=1&&n<=9){const b=document.getElementById('talkTopics').children[n-1];if(b)b.click();}
+      return;}
+    if(e.code==='KeyF'&&guideNear){openDialog();return;}
+    if(e.code==='KeyE'&&nearPoi&&!guideNear)toggleInfo(nearPoi);
+    if(e.code==='KeyT'){pIdx=(pIdx+1)%pKeys.length;applyPreset(pKeys[pIdx]);}});
+  addEventListener('keyup',e=>{keys[e.code]=false;});
+  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+  document.getElementById('infoClose').onclick=()=>toggleInfo(null);
+  document.getElementById('talkClose').onclick=()=>closeDialog();
+  if(TOUCH)setupTouch(cv);
+}
+function doAction(a){
+  if(a==='F'){ if(dialogOpen)closeDialog(); else if(guideNear)openDialog(); return; }
+  if(dialogOpen)return;
+  if(a==='E'){ if(nearPoi)toggleInfo(nearPoi); else if(infoOpen)toggleInfo(null); return; }
+  if(a==='T'){ pIdx=(pIdx+1)%pKeys.length; applyPreset(pKeys[pIdx]); return; }
+  if(a==='RUN'){ runOn=!runOn; document.getElementById('btnRun').classList.toggle('act',runOn); return; }
+  if(a==='JUMP'){ if(canJump){vy=CFG.JUMP;canJump=false;} }
+}
+function setupTouch(cv){
+  document.body.classList.add('touch');
+  const stick=document.getElementById('stick'), knob=document.getElementById('knob');
+  const R=52;
+  const bind=(id,act)=>{const el=document.getElementById(id);
+    el.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();doAction(act);},{passive:false});
+    el.addEventListener('contextmenu',e=>e.preventDefault());};
+  bind('btnF','F'); bind('btnE','E'); bind('btnT','T'); bind('btnRun','RUN');
+
+  stick.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();
+    const t=e.changedTouches[0]; stickId=t.identifier;
+    const r=stick.getBoundingClientRect(); stickCX=r.left+r.width/2; stickCY=r.top+r.height/2;
+    moveKnob(t.clientX,t.clientY);},{passive:false});
+
+  function moveKnob(cx,cy){
+    let dx=cx-stickCX, dy=cy-stickCY; const d=Math.hypot(dx,dy);
+    if(d>R){dx=dx/d*R; dy=dy/d*R;}
+    knob.style.transform='translate('+dx+'px,'+dy+'px)';
+    touchMove.x=dx/R; touchMove.y=dy/R;
+  }
+  function resetStick(){stickId=null;touchMove.x=touchMove.y=0;knob.style.transform='';}
+
+  // Blick: jede Berührung außerhalb der Bedienelemente
+  cv.addEventListener('touchstart',e=>{e.preventDefault();
+    if(lookId!==null)return; const t=e.changedTouches[0];
+    lookId=t.identifier; lookLX=t.clientX; lookLY=t.clientY;},{passive:false});
+
+  document.addEventListener('touchmove',e=>{
+    for(const t of e.changedTouches){
+      if(t.identifier===stickId){e.preventDefault();moveKnob(t.clientX,t.clientY);}
+      else if(t.identifier===lookId){e.preventDefault();
+        yaw-=(t.clientX-lookLX)*0.0055; pitch-=(t.clientY-lookLY)*0.0055;
+        pitch=Math.max(-1.45,Math.min(1.45,pitch));
+        lookLX=t.clientX; lookLY=t.clientY;}
+    }},{passive:false});
+
+  const end=e=>{for(const t of e.changedTouches){
+      if(t.identifier===stickId)resetStick();
+      if(t.identifier===lookId)lookId=null;}};
+  document.addEventListener('touchend',end); document.addEventListener('touchcancel',end);
+  document.addEventListener('gesturestart',e=>e.preventDefault());
+}
+
+function toggleInfo(p){const b=document.getElementById('info');if(p&&!infoOpen){document.getElementById('infoKicker').textContent=p.kicker;
+  document.getElementById('infoTitle').textContent=p.name;document.getElementById('infoText').textContent=p.text;b.classList.add('show');infoOpen=true;}
+  else{b.classList.remove('show');infoOpen=false;}}
+function blocked(x,z){for(const b of blockers){if(x>b.x1-CFG.RADIUS&&x<b.x2+CFG.RADIUS&&z>b.z1-CFG.RADIUS&&z<b.z2+CFG.RADIUS)return true;}return false;}
+
+function update(dt){
+  camera.rotation.set(pitch,yaw,0,'YXZ');
+  if(!infoOpen&&!dialogOpen){
+    const fwd=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw)),rgt=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw)),dir=new THREE.Vector3();
+    if(keys['KeyW'])dir.add(fwd);if(keys['KeyS'])dir.sub(fwd);if(keys['KeyD'])dir.add(rgt);if(keys['KeyA'])dir.sub(rgt);
+    if(touchMove.x||touchMove.y){dir.addScaledVector(fwd,-touchMove.y);dir.addScaledVector(rgt,touchMove.x);}
+    if(dir.lengthSq()>0){dir.normalize();const sp=((keys['ShiftLeft']||keys['ShiftRight']||runOn)?CFG.RUN:CFG.WALK)*dt;
+      const nx=pos.x+dir.x*sp;if(!blocked(nx,pos.z))pos.x=nx;const nz=pos.z+dir.z*sp;if(!blocked(pos.x,nz))pos.z=nz;}
+    if(keys['Space']&&canJump){vy=CFG.JUMP;canJump=false;}
+    vy-=CFG.GRAV*dt;pos.y+=vy*dt;if(pos.y<=CFG.EYE){pos.y=CFG.EYE;vy=0;canJump=true;}
+    pos.x=Math.max(-CFG.BOUND,Math.min(CFG.BOUND,pos.x));pos.z=Math.max(-CFG.BOUND,Math.min(CFG.BOUND,pos.z));
+  }
+  camera.position.copy(pos);sunLight.target.position.set(pos.x,0,pos.z);sky.position.copy(camera.position);
+  let near=null,best=1e9;
+  for(const p of pois){const d=Math.hypot(p.x-pos.x,p.z-pos.z);
+    if(!p.found&&d<12){p.found=true;foundCount++;updateCounter();showToast(p.name);}
+    if(d<14&&d<best){best=d;near=p;}}
+  guideNear = guide ? Math.hypot(guide.position.x-pos.x,guide.position.z-pos.z)<6.5 : false;
+  document.getElementById('talkPrompt').style.opacity=(guideNear&&!dialogOpen&&!infoOpen)?1:0;
+  if(TOUCH){ const bf=document.getElementById('btnF'), be=document.getElementById('btnE');
+    if(bf)bf.classList.toggle('hot',guideNear); if(be)be.classList.toggle('hot',!!near&&!guideNear); }
+  nearPoi=near;const pr=document.getElementById('prompt');pr.style.opacity=(near&&!infoOpen&&!guideNear)?1:0;
+  if(near)document.getElementById('promptText').textContent=near.name;
+  animate3d(dt);
+  drawMinimap();
+}
+function animate3d(dt){tAcc+=dt;
+  if(carriage){const period=36,half=18,tt=tAcc%period;let z,north;
+    if(tt<half){z=150-(tt/half)*90;north=true;}else{z=60+((tt-half)/half)*90;north=false;}
+    carriage.position.set(-5,0,z);carriage.rotation.y=north?0:Math.PI;wheels.forEach(w=>w.rotation.x-=dt*4);}
+  chickens.forEach(c=>{const u=c.userData;u.t+=dt;if(u.t>3+Math.random()*2){u.t=0;u.tx=rnd(160,180);u.tz=rnd(-6,10);}
+    c.position.x+=(u.tx-c.position.x)*dt*.5;c.position.z+=(u.tz-c.position.z)*dt*.5;
+    const dx=u.tx-c.position.x,dz=u.tz-c.position.z;if(Math.abs(dx)+Math.abs(dz)>.3)c.rotation.y=Math.atan2(dx,dz);
+    c.position.y=Math.abs(Math.sin(tAcc*6+u.ph))*.06;});
+  deer.forEach(d=>{const u=d.userData;u.t+=dt;if(u.t>5+Math.random()*4){u.t=0;u.tx=rnd(40,110);u.tz=rnd(120,190);}
+    const dx=u.tx-d.position.x,dz=u.tz-d.position.z;d.position.x+=dx*dt*.25;d.position.z+=dz*dt*.25;
+    if(Math.abs(dx)+Math.abs(dz)>.5)d.rotation.y=Math.atan2(dx,dz);});
+  if(balloon){const a=tAcc*.05;balloon.position.set(60+Math.cos(a)*120,55+Math.sin(tAcc*.4)*1.5,10+Math.sin(a)*120);}
+  clouds.forEach(s=>{s.position.x+=dt*1.4;if(s.position.x>190)s.position.x=-190;});
+  flags.forEach((f,i)=>{f.rotation.z=Math.sin(tAcc*2+i)*0.08;});
+  if(water)water.material.metalness=.3+Math.sin(tAcc*.8)*.08;
+  updateGuide(dt);
+}
+function updateCounter(){document.getElementById('counter').firstChild.textContent=foundCount+'\u00A0/\u00A0'+pois.length;}
+const MM=160, MMHALF=250, MMCX=45, MMCZ=-15, MMSCALE=MM/(MMHALF*2);
+function mmX(x){return ((x-MMCX)/(MMHALF*2)+0.5)*MM;}
+function mmZ(z){return ((z-MMCZ)/(MMHALF*2)+0.5)*MM;}
+function drawMinimap(){ if(!mmCtx)return; const g=mmCtx;
+  g.setTransform(2,0,0,2,0,0); g.clearRect(0,0,MM,MM);
+  g.fillStyle='rgba(107,122,62,0.12)'; g.fillRect(0,0,MM,MM);
+  for(const b of blockers){ const x=mmX(b.x1),y=mmZ(b.z1),w=(b.x2-b.x1)*MMSCALE,h=(b.z2-b.z1)*MMSCALE;
+    const area=(b.x2-b.x1)*(b.z2-b.z1);
+    g.fillStyle=area>4000?'rgba(53,86,107,0.62)':'rgba(110,96,72,0.72)'; g.fillRect(x,y,w,h); }
+  for(const p of pois){ g.fillStyle=p.found?'#B8924A':'rgba(120,110,90,0.5)';
+    g.beginPath(); g.arc(mmX(p.x),mmZ(p.z),2.4,0,7); g.fill(); }
+  if(guide){ g.fillStyle='#B8924A'; g.strokeStyle='#fff'; g.lineWidth=1;
+    g.beginPath(); g.arc(mmX(guide.position.x),mmZ(guide.position.z),3.2,0,7); g.fill(); g.stroke(); }
+  const px=mmX(pos.x),py=mmZ(pos.z),fx=-Math.sin(yaw),fz=-Math.cos(yaw);
+  g.save(); g.translate(px,py); g.rotate(Math.atan2(fx,-fz));
+  g.fillStyle='#2f6d3a'; g.strokeStyle='#fff'; g.lineWidth=1;
+  g.beginPath(); g.moveTo(0,-6.5); g.lineTo(4.5,5.5); g.lineTo(-4.5,5.5); g.closePath(); g.fill(); g.stroke(); g.restore();
+  g.fillStyle='#3a3a34'; g.font='bold 10px sans-serif'; g.textAlign='center'; g.fillText('N',MM/2,11);
+  g.setTransform(1,0,0,1,0,0);
+}
+let toastTimer;
+function showToast(name){const t=document.getElementById('toast');t.innerHTML='Entdeckt: <b>'+name+'</b>';t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+  if(foundCount>=pois.length)setTimeout(()=>{t.innerHTML='Alles entdeckt – schön, dass Sie da waren. 🌿';t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),4000);},2400);}
+function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);update(dt);renderer.render(scene,camera);}
+
+function boot(){init();loop();let p=0;const fill=document.getElementById('barFill');
+  const iv=setInterval(()=>{p=Math.min(100,p+9+Math.random()*13);fill.style.width=p+'%';if(p>=100){clearInterval(iv);document.getElementById('startBtn').style.opacity=1;}},110);
+  document.getElementById('startBtn').onclick=()=>{started=true;document.getElementById('loader').style.display='none';
+    if(!TOUCH)renderer.domElement.requestPointerLock();
+    setTimeout(()=>{document.getElementById('hint').style.opacity=0;},9000);};
+  document.getElementById('resumeBtn').onclick=()=>renderer.domElement.requestPointerLock();}
+window.addEventListener('load',boot);
+</script>
+</body>
+</html>

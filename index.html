@@ -811,6 +811,62 @@ function chimneyLocal(p,x,y,z,hh){const b=new THREE.Mesh(new THREE.BoxGeometry(1
   b.position.set(x,y+hh/2,z);p.add(b);
   const c=new THREE.Mesh(new THREE.BoxGeometry(1.35,.26,1.35),MAT.stone);c.position.set(x,y+hh,z);p.add(c);}
 
+// Schrift oder Zeichen als freigestellte Ebene (Jahreszahlen, Schriftzüge)
+function signPlane(txt,w,h,col,font){
+  const px=Math.max(64,Math.round(w*90)), py=Math.max(32,Math.round(h*90));
+  const c=document.createElement('canvas');c.width=px;c.height=py;const g=c.getContext('2d');
+  g.clearRect(0,0,px,py); g.fillStyle=col||'#231c14';
+  g.font='700 '+Math.round(py*.82)+'px '+(font||'Georgia, serif');
+  g.textAlign='center'; g.textBaseline='middle';
+  g.fillText(txt,px/2,py*.54);
+  const t=new THREE.CanvasTexture(c); t.anisotropy=4;
+  return new THREE.Mesh(new THREE.PlaneGeometry(w,h),
+    new THREE.MeshStandardMaterial({map:t,transparent:true,roughness:.9}));
+}
+// Hirsch-Silhouette (Wappentier am Giebel des Inspektorenhauses)
+function deerPlane(sz){
+  const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
+  g.clearRect(0,0,128,128); g.fillStyle='#e6dcc2';
+  g.beginPath();                                   // Körper
+  g.ellipse(64,78,26,15,0,0,7); g.fill();
+  g.beginPath(); g.ellipse(88,56,8,11,-0.4,0,7); g.fill();     // Hals
+  g.beginPath(); g.ellipse(95,44,10,6,-0.2,0,7); g.fill();     // Kopf
+  g.strokeStyle='#e6dcc2'; g.lineWidth=3.4; g.lineCap='round';
+  [[-1,0],[-1,1],[1,0],[1,1]].forEach((p,i)=>{                 // Beine
+    g.beginPath(); g.moveTo(52+i*16,90); g.lineTo(50+i*16+p[0]*4,112); g.stroke();});
+  [[0,-1],[0,1]].forEach(()=>{});
+  [[-1],[1]].forEach((p,i)=>{                                  // Geweih
+    const bx=93+i*6, by=38;
+    g.beginPath(); g.moveTo(bx,by); g.lineTo(bx-6+i*12,18); g.stroke();
+    g.beginPath(); g.moveTo(bx-3+i*6,28); g.lineTo(bx-14+i*26,22); g.stroke();
+    g.beginPath(); g.moveTo(bx-4+i*8,22); g.lineTo(bx-16+i*30,12); g.stroke();});
+  g.beginPath(); g.moveTo(40,70); g.lineTo(30,58); g.stroke();  // Schwanz
+  const t=new THREE.CanvasTexture(c);t.anisotropy=4;
+  return new THREE.Mesh(new THREE.PlaneGeometry(sz,sz),
+    new THREE.MeshStandardMaterial({map:t,transparent:true,roughness:.9}));
+}
+// Klappläden links und rechts eines Fensters
+function shutters(parent,x,y,z,wh,hh,rotY){
+  const m=mat(0x8d9c90,.9);
+  [-1,1].forEach(sd=>{const b=new THREE.Mesh(new THREE.BoxGeometry(wh*.56,hh,.09),m);
+    b.position.set(x+sd*(wh*.80),y,z); if(rotY)b.rotation.y=rotY; parent.add(b);
+    const l=new THREE.Mesh(new THREE.BoxGeometry(wh*.46,hh*.9,.03),mat(0x7b8a80,.9));
+    l.position.set(x+sd*(wh*.80),y,z+.06); if(rotY)l.rotation.y=rotY; parent.add(l);});
+}
+// Fachwerk-Raster auf einer Wandfläche
+function fachwerk(parent,x,y,z,W,H,rotY){
+  const holz=mat(0x5b4025,.95);
+  const add=(w,h,px,py)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,.14),holz);
+    b.position.set(px,py,0);grp.add(b);};
+  const grp=new THREE.Group();
+  add(W,.28,0,H/2-.14); add(W,.28,0,-H/2+.14);
+  const bays=Math.max(3,Math.round(W/2.6));
+  for(let i=0;i<=bays;i++){const px=-W/2+i*(W/bays); add(.26,H,px,0);}
+  for(let i=0;i<bays;i++){const px=-W/2+(i+.5)*(W/bays);
+    const d=new THREE.Mesh(new THREE.BoxGeometry(.22,Math.hypot(W/bays,H)*.94,.13),holz);
+    d.position.set(px,0,0); d.rotation.z=(i%2?1:-1)*Math.atan2(W/bays,H); grp.add(d);}
+  grp.position.set(x,y,z); if(rotY)grp.rotation.y=rotY; parent.add(grp);
+}
 // ---- 01a Schloss (Denkmal) + 01b Nordische Halle ------------------------
 function buildSchloss(){
   const H=13;
@@ -872,39 +928,128 @@ function ivyOn(x,z,w,d,h){ const m=mat(0x4d6a2e,1,true);
 
 function buildKaiserbrunnen(){ kaiserbrunnen(0,0); }
 
-// ---- 15 Kirche (Denkmal), Nordostecke des Schlosshofs -------------------
+// ---- 15 Kirche (Denkmal) – nach Fotos vom Schlosshof ---------------------
 function buildChurch(){
   const tx=26, tz=-34, rot=-0.5;
   const g=new THREE.Group();
-  const tower=new THREE.Mesh(new THREE.BoxGeometry(8,13,8),FIELD());tower.position.y=6.5;tower.castShadow=true;g.add(tower);
-  const upper=new THREE.Mesh(new THREE.BoxGeometry(8,8,8),BRICK());upper.position.y=17;upper.castShadow=true;g.add(upper);
-  const tr=hipRoof(8,8,4,MAT.tile,.25);tr.position.y=21;g.add(tr);
-  const cl=new THREE.Mesh(new THREE.CircleGeometry(1,20),mat(0xf3ede0));cl.position.set(0,16,4.06);g.add(cl);
-  // Staffelgiebel
-  [[1,4.06],[-1,-4.06]].forEach(p=>{let y=21;[[5.6,.8],[4.2,.8],[2.8,.8],[1.4,1.0]].forEach(st=>{
-    const b=new THREE.Mesh(new THREE.BoxGeometry(st[0],st[1],1.0),BRICK());b.position.set(0,y+st[1]/2,p[1]*0.92);g.add(b);y+=st[1];});});
-  // Portal + Stufen
-  const door=new THREE.Mesh(new THREE.BoxGeometry(2,3.4,.45),mat(0x4a3520));door.position.set(0,2.4,4.0);g.add(door);
-  for(let a=0;a<9;a++){const ang=Math.PI*(a/8);const seg=new THREE.Mesh(new THREE.BoxGeometry(.45,.45,.55),MAT.stone);
-    seg.position.set(Math.cos(ang)*1.3,4.1+Math.sin(ang)*1.3,4.0);seg.rotation.z=ang;g.add(seg);}
-  const st1=new THREE.Mesh(new THREE.BoxGeometry(3.4,.35,2.2),MAT.stone);st1.position.set(0,.18,5.4);g.add(st1);
-  // Schiff nach Nordosten
-  const nave=new THREE.Mesh(new THREE.BoxGeometry(10,9,17),FIELD());nave.position.set(0,4.5,-12.5);nave.castShadow=true;g.add(nave);
-  const nr=gableRoof(10,17,5,MAT.tile,'z',.45);nr.position.set(0,9,-12.5);g.add(nr);
-  windows3D(0,15.5,4.07,0,5.5,5,2,1,{parent:g,arch:true,glass:0x25303c,frameMat:MAT.stone});
-  windows3D(5.05,5,-12.5,Math.PI/2,15,5,3,1,{parent:g,arch:true,glass:0x25303c,frameMat:MAT.stone});
-  windows3D(-5.05,5,-12.5,-Math.PI/2,15,5,3,1,{parent:g,arch:true,glass:0x25303c,frameMat:MAT.stone});
+  const TW=8.6, FH=14.5, BH=9.0;                 // Turm: Feldstein unten, Backstein oben
+  const t1=new THREE.Mesh(new THREE.BoxGeometry(TW,FH,TW),FIELD());t1.position.y=FH/2;t1.castShadow=true;g.add(t1);
+  const t2=new THREE.Mesh(new THREE.BoxGeometry(TW,BH,TW),BRICK());t2.position.y=FH+BH/2;t2.castShadow=true;g.add(t2);
+  // gezinnter Staffelgiebel auf den beiden Breitseiten
+  [1,-1].forEach(sd=>{
+    const steps=[[TW,.9,0],[TW*0.74,.9,0],[TW*0.50,.9,0],[TW*0.26,1.0,0]];
+    let y=FH+BH;
+    steps.forEach(st=>{const b=new THREE.Mesh(new THREE.BoxGeometry(st[0],st[1],1.0),BRICK());
+      b.position.set(0,y+st[1]/2,sd*(TW/2-.5));g.add(b);y+=st[1];});
+    // Zinnenzähne auf der untersten Stufe
+    [-1,1].forEach(o=>{const z1=new THREE.Mesh(new THREE.BoxGeometry(TW*.16,1.7,1.0),BRICK());
+      z1.position.set(o*TW*0.35,FH+BH+1.75,sd*(TW/2-.5));g.add(z1);});
+  });
+  const tr=gableRoof(TW-1.2,TW-1.2,2.2,MAT.tile,'x',.15);tr.position.y=FH+BH+.9;g.add(tr);
+  // farbig gefasste Turmuhr
+  const cl=new THREE.Mesh(new THREE.BoxGeometry(1.9,1.9,.16),mat(0xb8342c,.8));cl.position.set(0,FH+1.6,TW/2+.06);g.add(cl);
+  const cf=new THREE.Mesh(new THREE.CircleGeometry(.72,22),mat(0xe8dcc0,.85));cf.position.set(0,FH+1.6,TW/2+.15);g.add(cf);
+  [0,1,2,3].forEach(i=>{const zg=new THREE.Mesh(new THREE.BoxGeometry(.12,.3,.04),mat(0x1c2a4a));
+    zg.position.set(Math.sin(i*Math.PI/2)*.55,FH+1.6+Math.cos(i*Math.PI/2)*.55,TW/2+.17);g.add(zg);});
+  const zr=new THREE.Mesh(new THREE.BoxGeometry(.09,.62,.05),mat(0x1c2a4a));zr.position.set(0,FH+1.85,TW/2+.19);g.add(zr);
+  // gekuppelte Schallöffnungen im Backsteinteil, auf allen vier Seiten
+  for(let i=0;i<4;i++){const grp=new THREE.Group();
+    [-.95,.95].forEach(off=>{
+      const w=new THREE.Mesh(new THREE.BoxGeometry(.62,2.6,.3),mat(0x231d16));w.position.set(off,FH+BH*.55,TW/2+.02);grp.add(w);
+      const sp=new THREE.Mesh(new THREE.ConeGeometry(.42,.8,4),mat(0x231d16));
+      sp.rotation.y=Math.PI/4;sp.position.set(off,FH+BH*.55+1.6,TW/2+.02);grp.add(sp);});
+    grp.rotation.y=i*Math.PI/2;g.add(grp);}
+  // schmale Schlitzfenster im Feldstein
+  [[-2.1,7.4],[2.1,7.4],[0,11.2]].forEach(p=>{
+    const w=new THREE.Mesh(new THREE.BoxGeometry(.42,2.2,.26),mat(0x241e17));w.position.set(p[0],p[1],TW/2+.02);g.add(w);
+    const sp=new THREE.Mesh(new THREE.ConeGeometry(.3,.6,4),mat(0x241e17));sp.rotation.y=Math.PI/4;
+    sp.position.set(p[0],p[1]+1.4,TW/2+.02);g.add(sp);});
+  // Rundbogenportal aus Backstein mit gestufter Laibung, Tafel darüber
+  const pw=3.0;
+  const door=new THREE.Mesh(new THREE.BoxGeometry(pw,3.8,.5),mat(0x3d2f1f));door.position.set(0,1.9,TW/2+.04);g.add(door);
+  [0,1,2].forEach(ring=>{const r=1.55+ring*.42;
+    for(let k=0;k<13;k++){const ang=Math.PI*(k/12);
+      const b=new THREE.Mesh(new THREE.BoxGeometry(.4,.4,.5-ring*.12),BRICK());
+      b.position.set(Math.cos(ang)*r,3.8+Math.sin(ang)*r,TW/2+.04-ring*.02);b.rotation.z=ang;g.add(b);}});
+  const taf=new THREE.Mesh(new THREE.BoxGeometry(1.8,.8,.16),mat(0x8d8577));taf.position.set(0,6.6,TW/2+.06);g.add(taf);
+  for(let i=0;i<3;i++){const st=new THREE.Mesh(new THREE.BoxGeometry(4.2-i*.4,.3,.6),MAT.stone);
+    st.position.set(0,.15+i*.3,TW/2+.6+i*.6);g.add(st);}
+  // Schiff mit steilem Ziegeldach und Rundfenster im Giebel
+  const NW=11, NL=18, NH=7.5;
+  const nave=new THREE.Mesh(new THREE.BoxGeometry(NW,NH,NL),FIELD());nave.position.set(0,NH/2,-TW/2-NL/2);nave.castShadow=true;g.add(nave);
+  const nr=gableRoof(NW,NL,7.6,MAT.tile,'z',.5);nr.position.set(0,NH,-TW/2-NL/2);g.add(nr);
+  const gable=new THREE.Mesh(new THREE.BoxGeometry(NW,7.6,.6),FIELD());gable.position.set(0,NH+3.8,-TW/2-NL+.3);
+  gable.geometry.translate(0,0,0);g.add(gable);
+  const ros=new THREE.Mesh(new THREE.CircleGeometry(1.5,26),mat(0x2b241b));ros.position.set(0,NH+3.2,-TW/2-NL-.02);
+  ros.rotation.y=Math.PI;g.add(ros);
+  const rosR=new THREE.Mesh(new THREE.TorusGeometry(1.68,.22,10,28),BRICK());rosR.position.set(0,NH+3.2,-TW/2-NL-.04);g.add(rosR);
+  // Spitzbogenfenster in den Schiffswänden
+  [-1,1].forEach(sd=>{ for(let i=0;i<3;i++){ const zz=-TW/2-4.5-i*5;
+    const w=new THREE.Mesh(new THREE.BoxGeometry(.3,3.0,1.2),mat(0x241e17));w.position.set(sd*(NW/2+.02),4.2,zz);g.add(w);
+    const sp=new THREE.Mesh(new THREE.ConeGeometry(.8,1.3,4),mat(0x241e17));sp.rotation.y=Math.PI/4;sp.rotation.z=sd*Math.PI/2;
+    sp.position.set(sd*(NW/2+.02),5.9,zz);g.add(sp);} });
   g.position.set(tx,0,tz); g.rotation.y=rot; scene.add(g);
-  rotBlock(tx,tz,10,8,rot); rotBlock(tx+Math.sin(rot)*12.5,tz-Math.cos(rot)*12.5,10,17,rot);
+  rotBlock(tx,tz,TW,TW,rot);
+  rotBlock(tx+Math.sin(rot)*(TW/2+NL/2),tz-Math.cos(rot)*(TW/2+NL/2),NW,NL,rot);
 }
 
 // ---- 11 Inspektorenhaus (Nordseite des Hofs) + 10 Kastanienhaus --------
 function buildHofWest(){
-  simpleBuilding({x:-2,z:-39,w:14.6,d:51.7,h:11,roof:'gable',rh:6,mat:MAT.pink,
-    cols:4,rows:3,lit:.12,socle:true,chimney:true});
+  buildInspektorenhaus(-2,-39);
   simpleBuilding({x:-27,z:-29,w:10.1,d:14.5,h:8,roof:'hip',rh:4.5,mat:MAT.creamL,cols:3,rows:2,lit:.10});
   simpleBuilding({x:67,z:-26,w:9,d:9,h:5.5,roof:'hip',rh:3,mat:MAT.creamL,cols:2,rows:1,lit:.08});
   simpleBuilding({x:-133,z:-49,w:7,d:7,h:3.4,roof:'hip',rh:2.6,mat:MAT.stone,cols:1,rows:1});
+}
+
+// ---- 11 Inspektorenhaus / Museum (1698) – nach Hoffotos -------------------
+function buildInspektorenhaus(x,z){
+  const W=14.6, D=51.7, H=9.5, g=new THREE.Group();
+  const lachs=mat(0xc9674f,.95);                        // kräftiges Lachsrot
+  const body=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),lachs);body.position.y=H/2;
+  body.castShadow=true;body.receiveShadow=true;g.add(body);
+  const soc=new THREE.Mesh(new THREE.BoxGeometry(W+.3,1.6,D+.3),FIELD());soc.position.y=.8;g.add(soc);
+  // steiles Ziegeldach, Giebel zum Hof (+z)
+  const RH=8.5;
+  const roof=gableRoof(W,D,RH,MAT.tile,'z',.55);roof.position.y=H;g.add(roof);
+  // Giebelscheibe zum Hof
+  const tri=new THREE.Shape();tri.moveTo(-W/2,0);tri.lineTo(W/2,0);tri.lineTo(0,RH);tri.lineTo(-W/2,0);
+  const gm=new THREE.Mesh(new THREE.ExtrudeGeometry(tri,{depth:.6,bevelEnabled:false}),lachs);
+  gm.position.set(0,H,D/2-.3);g.add(gm);
+  // Jahreszahl 1698 und S-Anker aus Eisen
+  const jahr=signPlane('1698',5.2,1.5,'#241a12');jahr.position.set(0,H+2.4,D/2+.34);g.add(jahr);
+  [-3.4,3.4].forEach(dx=>{const an=signPlane('S',.9,1.1,'#241a12');an.position.set(dx,H+1.2,D/2+.34);an.rotation.z=.15;g.add(an);});
+  // Hirsch-Medaillon im Giebel
+  const med=new THREE.Mesh(new THREE.CircleGeometry(1.15,26),mat(0x2e2a22,.8));med.position.set(0,H+5.0,D/2+.33);g.add(med);
+  const medR=new THREE.Mesh(new THREE.TorusGeometry(1.25,.16,10,28),mat(0xd8cdb4,.8));medR.position.set(0,H+5.0,D/2+.32);g.add(medR);
+  const hir=deerPlane(1.6);hir.position.set(0,H+5.0,D/2+.38);g.add(hir);
+  // Fenster mit Klappläden, Giebelseite
+  [[-4.2,3.2],[4.2,3.2],[-4.2,6.6],[4.2,6.6],[0,6.6]].forEach(p=>{
+    const w=new THREE.Mesh(new THREE.BoxGeometry(1.35,1.6,.26),mat(0x39424c));w.position.set(p[0],p[1],D/2+.04);g.add(w);
+    const cr=new THREE.Mesh(new THREE.BoxGeometry(.08,1.6,.1),MAT.white);cr.position.set(p[0],p[1],D/2+.16);g.add(cr);
+    const cr2=new THREE.Mesh(new THREE.BoxGeometry(1.35,.08,.1),MAT.white);cr2.position.set(p[0],p[1],D/2+.16);g.add(cr2);
+    shutters(g,p[0],p[1],D/2+.10,1.35,1.7);});
+  // Eingang mit Schriftzug MUSEUM, Treppe und Geländer
+  const tuer=new THREE.Mesh(new THREE.BoxGeometry(1.7,2.8,.35),mat(0x8d9aa6,.85));tuer.position.set(-2.6,1.5,D/2+.05);g.add(tuer);
+  const schild=signPlane('MUSEUM',3.0,.55,'#2a2117');schild.position.set(-2.6,3.35,D/2+.34);g.add(schild);
+  for(let i=0;i<3;i++){const st=new THREE.Mesh(new THREE.BoxGeometry(2.6,.24,.55),MAT.stone);
+    st.position.set(-2.6,.12+i*.24,D/2+.5+i*.55);g.add(st);}
+  [-1,1].forEach(sd=>{const gel=new THREE.Mesh(new THREE.BoxGeometry(.07,1.0,1.9),mat(0x2b2b28,.5));
+    gel.position.set(-2.6+sd*1.25,1.0,D/2+1.1);g.add(gel);});
+  // Kellerbogen im Sockel
+  const kel=new THREE.Mesh(new THREE.BoxGeometry(1.5,1.5,.4),mat(0x1d1a15));kel.position.set(4.6,.75,D/2+.06);g.add(kel);
+  for(let k=0;k<9;k++){const ang=Math.PI*(k/8);const b=new THREE.Mesh(new THREE.BoxGeometry(.3,.3,.42),MAT.stone);
+    b.position.set(4.6+Math.cos(ang)*.85,1.5+Math.sin(ang)*.85,D/2+.06);b.rotation.z=ang;g.add(b);}
+  // Längsseiten: Fenster mit Läden, hinterer Teil in Fachwerk
+  [-1,1].forEach(sd=>{
+    for(let i=0;i<6;i++){const zz=D/2-5-i*4.4;
+      const w=new THREE.Mesh(new THREE.BoxGeometry(.26,1.5,1.25),mat(0x39424c));
+      w.position.set(sd*(W/2+.03),3.4,zz);g.add(w);
+      const sh=new THREE.Group();shutters(sh,0,0,0,1.25,1.6);
+      sh.position.set(sd*(W/2+.10),3.4,zz);sh.rotation.y=sd*Math.PI/2;g.add(sh);}
+    fachwerk(g,sd*(W/2+.08),5.6,-D/4-3,20,6.4,sd*Math.PI/2);
+  });
+  [[-3.5,-14],[3.5,4],[-3.5,18]].forEach(p=>chimneyLocal(g,p[0],H+RH*.55,p[1],3.0));
+  g.position.set(x,0,z);scene.add(g);addBlock(x,z,W,D);return g;
 }
 
 // ---- Gutshof: 07 Rinderstall, Scheunen, Ställe, Garagenriegel ----------

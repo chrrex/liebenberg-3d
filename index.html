@@ -130,14 +130,14 @@
 <div id="topright" class="hud"><b id="presetName">Goldene Stunde</b><br><span>T · Tageszeit wechseln</span></div>
 <div id="prompt" class="hud"><div class="k">E</div><div class="t" id="promptText">Infotafel lesen</div></div>
 <div id="toast" class="hud"></div>
-<div id="talkPrompt" class="hud"><div class="k">F</div><div class="t">Mit dem Gutsführer sprechen</div></div>
+<div id="talkPrompt" class="hud"><div class="k">F</div><div class="t">Ansprechen</div></div>
 <div id="talk"><div class="band"></div><div class="body">
-  <div class="who"><span class="av"></span><span><b id="talkName">Der Gutsführer</b><small id="talkWhere"></small></span></div>
+  <div class="who"><span class="av"></span><span><b id="talkName"></b><small id="talkWhere"></small></span></div>
   <div class="txt" id="talkText"></div>
   <div class="kicker" style="margin-top:18px">Worüber möchten Sie mehr hören?</div>
   <div id="talkTopics"></div>
   <button class="close" id="talkClose">Gespräch beenden</button></div></div>
-<div id="hint" class="hud"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> gehen · Maus schauen · <kbd>Shift</kbd> rennen · <kbd>Space</kbd> springen · <kbd>E</kbd> Infotafel · <kbd>F</kbd> Gutsführer ansprechen</div>
+<div id="hint" class="hud"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> gehen · Maus schauen · <kbd>Shift</kbd> rennen · <kbd>Space</kbd> springen · <kbd>E</kbd> Infotafel · <kbd>F</kbd> Leute ansprechen</div>
 <div id="info"><div class="band"></div><div class="body">
   <div class="kicker" id="infoKicker"></div><h3 id="infoTitle"></h3><div class="txt" id="infoText"></div>
   <button class="close" id="infoClose">Weiter erkunden</button></div></div>
@@ -146,7 +146,7 @@
   <div class="bar"><i id="barFill"></i></div><button class="startbtn" id="startBtn">Am Kaiserbrunnen starten</button>
   <div class="foot">Ein Wirkungsort der DKB Stiftung</div></div></div>
 <div id="pause" class="screen"><h2>Pause</h2>
-  <div class="keys"><div><b>WASD</b>Gehen</div><div><b>Maus</b>Umsehen</div><div><b>Shift</b>Rennen</div><div><b>Space</b>Springen</div><div><b>E</b>Infotafel</div><div><b>F</b>Gutsführer</div><div><b>T</b>Tageszeit</div></div>
+  <div class="keys"><div><b>WASD</b>Gehen</div><div><b>Maus</b>Umsehen</div><div><b>Shift</b>Rennen</div><div><b>Space</b>Springen</div><div><b>E</b>Infotafel</div><div><b>F</b>Ansprechen</div><div><b>T</b>Tageszeit</div></div>
   <p>Klick zurück in den Park. Mit <b>Esc</b> hältst du jederzeit an.</p><button class="startbtn" id="resumeBtn">Zurück in den Park</button></div>
 <div id="touch">
   <div id="stick"><div id="knob"></div></div>
@@ -458,22 +458,38 @@ function makeClouds(){const cvs=document.createElement('canvas');cvs.width=cvs.h
   for(let i=0;i<6;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,opacity:.85,depthWrite:false,fog:false}));
     s.scale.set(60+Math.random()*40,26+Math.random()*14,1);s.position.set((Math.random()-.5)*340,64+Math.random()*30,-80-Math.random()*180);scene.add(s);clouds.push(s);}}
 
-// ---- Gutsführer: Figur, Route, Gespräch ---------------------------------
-let guide=null, guideNear=false, dialogOpen=false, guideWp=0, guidePause=0, guideTopic=0;
+// ---- Figuren auf dem Gelände: Route, Auftritt, Gespräch ------------------
+let figures=[], talkFig=null, dialogOpen=false, guideTopic=0;
 
-function makeGuide(){
+function makeFigure(c){
   const g=new THREE.Group();
-  const coat=mat(0x6B7A3E,.85), trous=mat(0x3b3930,.95), skin=mat(0xe3b189,.8),
-        boot=mat(0x2b241c,.7), cap=mat(0x4f5c30,.85), shirt=mat(0xf2ede0,.9);
+  const coat=mat(c.coat,.85), trous=mat(c.trous,.95), skin=mat(c.skin||0xe3b189,.8),
+        boot=mat(0x2b241c,.7), hutM=mat(c.hut,.85), shirt=mat(0xf2ede0,.9);
+  const th=c.tall||1.0;
   const torso=new THREE.Mesh(new THREE.BoxGeometry(.56,.76,.32),coat);torso.position.y=1.20;torso.castShadow=true;g.add(torso);
   const collar=new THREE.Mesh(new THREE.BoxGeometry(.30,.16,.34),shirt);collar.position.y=1.52;g.add(collar);
-  const hips=new THREE.Mesh(new THREE.BoxGeometry(.48,.22,.30),trous);hips.position.y=.80;g.add(hips);
+  if(c.rock){ const rk=new THREE.Mesh(new THREE.CylinderGeometry(.30,.42,.62,10),coat);rk.position.y=.66;rk.castShadow=true;g.add(rk); }
+  else { const hips=new THREE.Mesh(new THREE.BoxGeometry(.48,.22,.30),trous);hips.position.y=.80;g.add(hips); }
   const neck=new THREE.Mesh(new THREE.CylinderGeometry(.08,.09,.12,8),skin);neck.position.y=1.62;g.add(neck);
   const head=new THREE.Mesh(new THREE.SphereGeometry(.155,14,12),skin);head.position.y=1.77;head.scale.set(1,1.12,.95);
   head.castShadow=true;g.add(head);
   const nose=new THREE.Mesh(new THREE.ConeGeometry(.04,.10,6),skin);nose.rotation.x=Math.PI/2;nose.position.set(0,1.76,.15);g.add(nose);
-  const capT=new THREE.Mesh(new THREE.SphereGeometry(.17,14,10,0,6.28,0,Math.PI/2),cap);capT.position.y=1.82;g.add(capT);
-  const peak=new THREE.Mesh(new THREE.BoxGeometry(.30,.035,.16),cap);peak.position.set(0,1.83,.16);g.add(peak);
+  if(c.haar){ const ha=new THREE.Mesh(new THREE.SphereGeometry(.175,14,10),mat(c.haar,.9));
+    ha.position.y=1.79;ha.scale.set(1,1.02,1.05);g.add(ha);
+    const kn=new THREE.Mesh(new THREE.SphereGeometry(.10,10,8),mat(c.haar,.9));kn.position.set(0,1.76,-.19);g.add(kn); }
+  if(c.hutTyp==='kappe'){
+    const capT=new THREE.Mesh(new THREE.SphereGeometry(.17,14,10,0,6.28,0,Math.PI/2),hutM);capT.position.y=1.82;g.add(capT);
+    const peak=new THREE.Mesh(new THREE.BoxGeometry(.30,.035,.16),hutM);peak.position.set(0,1.83,.16);g.add(peak);
+  }else if(c.hutTyp==='strohhut'){
+    const kr=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.03,16),hutM);kr.position.y=1.88;g.add(kr);
+    const kp=new THREE.Mesh(new THREE.CylinderGeometry(.16,.18,.16,14),hutM);kp.position.y=1.95;g.add(kp);
+  }else if(c.hutTyp==='zylinder'){
+    const kr=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.03,16),hutM);kr.position.y=1.90;g.add(kr);
+    const kp=new THREE.Mesh(new THREE.CylinderGeometry(.16,.17,.32,14),hutM);kp.position.y=2.06;g.add(kp);
+  }else if(c.hutTyp==='tuch'){
+    const tu=new THREE.Mesh(new THREE.SphereGeometry(.175,14,10,0,6.28,0,Math.PI/2),hutM);tu.position.y=1.80;g.add(tu);
+    const kn=new THREE.Mesh(new THREE.SphereGeometry(.07,8,6),hutM);kn.position.set(0,1.80,-.20);g.add(kn);
+  }
   const arms=[],legs=[];
   [-1,1].forEach(sd=>{
     const a=new THREE.Group(); a.position.set(sd*.36,1.50,0);
@@ -481,117 +497,147 @@ function makeGuide(){
     const hand=new THREE.Mesh(new THREE.BoxGeometry(.13,.14,.14),skin);hand.position.y=-.66;a.add(hand);
     g.add(a);arms.push(a);
     const l=new THREE.Group(); l.position.set(sd*.15,.80,0);
-    const th=new THREE.Mesh(new THREE.BoxGeometry(.19,.74,.20),trous);th.position.y=-.37;th.castShadow=true;l.add(th);
+    const thh=new THREE.Mesh(new THREE.BoxGeometry(.19,.74,.20),trous);thh.position.y=-.37;thh.castShadow=true;l.add(thh);
     const bo=new THREE.Mesh(new THREE.BoxGeometry(.21,.14,.30),boot);bo.position.set(0,-.78,.04);l.add(bo);
     g.add(l);legs.push(l);});
+  // getragenes Gerät
+  if(c.geraet==='harke'){ const st=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,1.7,6),MAT.wood);
+    st.position.set(.44,1.0,.12);st.rotation.z=.22;g.add(st);
+    const kp=new THREE.Mesh(new THREE.BoxGeometry(.5,.08,.09),MAT.wood);kp.position.set(.62,.22,.12);g.add(kp); }
+  if(c.geraet==='peitsche'){ const st=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.2,6),MAT.wood);
+    st.position.set(.44,1.15,.10);st.rotation.z=-.5;g.add(st); }
+  if(c.geraet==='korb'){ const kb=new THREE.Mesh(new THREE.CylinderGeometry(.19,.15,.22,12),mat(0xa8823f,1));
+    kb.position.set(.46,.86,.12);g.add(kb); }
+  g.scale.setScalar(th);
   g.userData={arms,legs};
-  g.position.set(6,0,-10); scene.add(g); return g;
+  g.position.set(c.route[0][0],0,c.route[0][1]); scene.add(g); return g;
 }
 
-// Rundgang über Hof, Gutshof, Park und Allee (auf Wegen und Rasen, an Gebäuden vorbei)
-const GUIDE_ROUTE=[[6,-10],[14,-18],[40,-18],[62,-14],[104,-10],[110,-20],[146,-18],[150,10],[150,32],
-                   [118,36],[80,36],[66,66],[60,95],[10,95],[-5,118],[-5,136],[-5,104],[-2,90],[-16,60],
-                   [-16,12],[-14,-6]];
-
-function updateGuide(dt){
-  if(!guide)return;
-  const ud=guide.userData;
-  const pdist=Math.hypot(guide.position.x-pos.x, guide.position.z-pos.z);
-  const talking = dialogOpen && pdist<14;
-  if(talking){
-    // dem Gast zuwenden, ruhig stehen, leicht gestikulieren
-    const want=Math.atan2(pos.x-guide.position.x, pos.z-guide.position.z);
-    let d=want-guide.rotation.y; while(d>Math.PI)d-=6.283; while(d<-Math.PI)d+=6.283;
-    guide.rotation.y+=d*Math.min(1,dt*6);
-    ud.legs[0].rotation.x=ud.legs[1].rotation.x=0;
-    ud.arms[0].rotation.x=Math.sin(tAcc*2.2)*.22-.12;
-    ud.arms[1].rotation.x=Math.sin(tAcc*2.2+1.1)*.16-.08;
-    guide.position.y=0; return;
+function updateFigures(dt){
+  for(const F of figures){
+    const o=F.obj, ud=o.userData;
+    const pd=Math.hypot(o.position.x-pos.x,o.position.z-pos.z);
+    if(dialogOpen && talkFig===F && pd<16){
+      const want=Math.atan2(pos.x-o.position.x,pos.z-o.position.z);
+      let d=want-o.rotation.y; while(d>Math.PI)d-=6.283; while(d<-Math.PI)d+=6.283;
+      o.rotation.y+=d*Math.min(1,dt*6);
+      ud.legs[0].rotation.x=ud.legs[1].rotation.x=0;
+      ud.arms[0].rotation.x=Math.sin(tAcc*2.2)*.22-.12;
+      ud.arms[1].rotation.x=Math.sin(tAcc*2.2+1.1)*.16-.08;
+      o.position.y=0; continue;
+    }
+    if(F.pause>0){ F.pause-=dt;
+      ud.legs[0].rotation.x=ud.legs[1].rotation.x=0;
+      ud.arms[0].rotation.x=ud.arms[1].rotation.x=0; o.position.y=0; continue; }
+    const tgt=F.cfg.route[F.wp];
+    const dx=tgt[0]-o.position.x, dz=tgt[1]-o.position.z, dist=Math.hypot(dx,dz);
+    if(dist<1.4){ F.wp=(F.wp+1)%F.cfg.route.length; F.pause=1.2+Math.random()*2.8; continue; }
+    const sp=F.cfg.tempo||1.55;
+    o.position.x+=dx/dist*sp*dt; o.position.z+=dz/dist*sp*dt;
+    const want=Math.atan2(dx,dz);
+    let d=want-o.rotation.y; while(d>Math.PI)d-=6.283; while(d<-Math.PI)d+=6.283;
+    o.rotation.y+=d*Math.min(1,dt*4);
+    const sw=Math.sin(tAcc*5.4+F.ph)*.52;
+    ud.legs[0].rotation.x=sw; ud.legs[1].rotation.x=-sw;
+    ud.arms[0].rotation.x=-sw*.75; ud.arms[1].rotation.x=sw*.75;
+    o.position.y=Math.abs(Math.sin(tAcc*5.4+F.ph))*.035;
   }
-  if(guidePause>0){ guidePause-=dt;
-    ud.legs[0].rotation.x=ud.legs[1].rotation.x=0;
-    ud.arms[0].rotation.x=ud.arms[1].rotation.x=0; guide.position.y=0; return; }
-  const tgt=GUIDE_ROUTE[guideWp];
-  const dx=tgt[0]-guide.position.x, dz=tgt[1]-guide.position.z;
-  const dist=Math.hypot(dx,dz);
-  if(dist<1.4){ guideWp=(guideWp+1)%GUIDE_ROUTE.length; guidePause=1.2+Math.random()*2.6; return; }
-  const sp=1.55;
-  guide.position.x+=dx/dist*sp*dt; guide.position.z+=dz/dist*sp*dt;
-  const want=Math.atan2(dx,dz);
-  let d=want-guide.rotation.y; while(d>Math.PI)d-=6.283; while(d<-Math.PI)d+=6.283;
-  guide.rotation.y+=d*Math.min(1,dt*4);
-  const sw=Math.sin(tAcc*5.4)*.52;
-  ud.legs[0].rotation.x=sw; ud.legs[1].rotation.x=-sw;
-  ud.arms[0].rotation.x=-sw*.75; ud.arms[1].rotation.x=sw*.75;
-  guide.position.y=Math.abs(Math.sin(tAcc*5.4))*.035;
 }
+function nearestFigure(){ let best=null,bd=6.5;
+  for(const F of figures){ const d=Math.hypot(F.obj.position.x-pos.x,F.obj.position.z-pos.z);
+    if(d<bd){bd=d;best=F;} }
+  return best; }
 
-// ---- Was der Gutsführer je nach Standort erzählen kann -------------------
-const GUIDE_INTRO='Guten Tag! Ich zeige hier Gästen das Gut. Fragen Sie mich ruhig etwas – wir stehen gerade bei %s.';
-const TOPICS={
- 'Kaiserbrunnen':[
-  ['Der Name','Der Brunnen erinnert an die Besuche Kaiser Wilhelms II., der hier in Liebenberg oft und gern zu Gast war. Er steht seither als Mittelpunkt im Schlosshof.'],
-  ['Die Haube','Die geschwungene Haube ist aus Kupfer und hat über die Jahrzehnte ihre grüne Patina bekommen. Vier Sandsteinpfeiler tragen sie, unten ist eine Kartusche in den Stein gearbeitet.'],
-  ['Der Hof','Um den Brunnen herum schließt sich der Schlosshof: das Schloss im Süden, das lange Inspektorenhaus im Norden, die Kirche an der Nordostecke und die Nordische Halle im Osten.']],
- 'Schloss':[
-  ['Die Anfänge','Liebenberg wird 1267 zum ersten Mal urkundlich erwähnt. Was Sie heute sehen, trägt aber vor allem die Handschrift der späteren Umbauten – das Haus ist über Jahrhunderte gewachsen statt in einem Zug gebaut worden.'],
-  ['Die Eulenburgs','Das Gut gehörte der Familie zu Eulenburg. Philipp Fürst zu Eulenburg war ein enger Vertrauter Kaiser Wilhelms II. – deshalb ging hier zeitweise der Hof ein und aus. Auch Theodor Fontane hat Liebenberg beschrieben.'],
-  ['Die Architektur','Achten Sie auf das Dach: Schiefer, darauf Gauben im Wechsel von Dreiecks- und Volutengiebeln, jede mit Aufsätzen. In der Mitte der Hofturm mit Glockenstube und Achtkanthelm, darunter das dreibogige Portal.'],
-  ['Heute','Das Schloss ist heute Hotel mit 45 Zimmern und steht unter Denkmalschutz – rund 3.900 Quadratmeter Geschossfläche. Träger ist die DKB Stiftung.']],
- 'Nordische Halle':[
-  ['Das Gebäude','Die Nordische Halle fasst den Hof nach Osten – gut 1.700 Quadratmeter. Die hohen Rundbogenfenster und die runden Ochsenaugen darüber geben ihr den besonderen Rhythmus.'],
-  ['Der Efeu','Die Fassade ist über die Jahre zugewachsen. Im Sommer verschwindet fast die ganze Wand hinter dem Grün, im Herbst färbt es sich und gibt die Fenster wieder frei.']],
- 'Feldsteinkirche':[
-  ['Der Bau','Unten Feldstein, oben Backstein – daran sieht man, dass in zwei Etappen gebaut wurde. Der Turm trägt Staffelgiebel und eine Uhr, ins Schiff führt ein Rundbogenportal über ein paar Stufen.'],
-  ['Feldstein','Die Findlinge stammen aus der Eiszeit und lagen auf den Feldern ringsum. Man hat sie gespalten und vermauert – deshalb sieht in der Mark keine Feldsteinkirche aus wie die andere.'],
-  ['Heute','Die Kirche ist Denkmal und gehört zum Ensemble. Getraut wird hier auch heute noch – mitten im Hof, ein paar Schritte vom Schloss.']],
- 'Inspektorenhaus':[
-  ['Der Inspektor','Der Gutsinspektor führte die Wirtschaft: Felder, Vieh, Gesinde, Abrechnung. Dass sein Haus so lang ist und den ganzen Hof nach Norden fasst, sagt einiges über die Bedeutung des Postens.'],
-  ['Das Haus','Über 2.100 Quadratmeter Geschossfläche, Denkmal, mit Feldsteinsockel und hohen Schornsteinen. Heute wird hier die Geschichte des Guts erzählt.']],
- 'Rinderstall':[
-  ['Der Stall','Gut 2.280 Quadratmeter unter einem Dach – das war Landwirtschaft im großen Maßstab. Die Reihe der Tore an der Längsseite verrät, wie der Betrieb organisiert war.'],
-  ['Heute','Der Stall ist Denkmal und heute der große Veranstaltungsort: bis zu 260 Gäste finden hier Platz, für Tagungen ebenso wie für Feste.']],
- 'Gutshof':[
-  ['Der Wirtschaftshof','Hier lag die Arbeit: Ställe, Scheunen, Remisen, Werkstätten. Rund um den weiten Hof reihen sich Rinderstall, Fitness-Scheune, Stall mit Freilaufgehege, Scheune 9 und der lange Garagenriegel.'],
-  ['Schloss und Gut','Das ist das Prinzip eines Gutshofs: vorn das Herrenhaus mit Park, dahinter der Wirtschaftshof. Beides gehört zusammen – ohne den Hof hätte es das Schloss nie gegeben.']],
- 'Kutscherhaus':[
-  ['1903','Die Jahreszahl steht im Giebel – da wurde gebaut. Drei Rundbogen-Einfahrten nebeneinander, damit die Wagen hinein und hinaus konnten, ohne zu rangieren.'],
-  ['Das Material','Sehen Sie sich die Bögen an: grob behauene Feldsteine als Keile, darüber Putz, die Fenster mit roten Ziegelgewänden gerahmt. Und oben die fünf hohen Backsteinschornsteine.'],
-  ['Kutschen','Unten standen Wagen und Pferde, oben wohnte das Personal – daher die vielen Schornsteine. Heute sind in den Räumen Ateliers untergebracht.']],
- 'Musikscheune':[
-  ['Die Scheune','Am Ostende des Guts, knapp 500 Quadratmeter, aber mit 3.683 Kubikmetern sehr hoch – eine Scheune hat eben Luft nach oben. Genau das macht sie für Musik brauchbar.']],
- 'Teehaus':[
-  ['Das kleinste Denkmal','61 Quadratmeter – das kleinste geschützte Gebäude auf dem Gelände. Ein Gartenhaus zum Verweilen, nicht zum Wohnen.'],
-  ['Die Lindenallee','Davor die doppelte Reihe geschnittener Linden. Solche Alleen wurden gepflanzt, um dem Blick eine Richtung zu geben – hier führt sie vom Teehaus hinunter zum Lindenhaus.']],
- 'Lindenhaus':[
-  ['Am Ende der Allee','458 Quadratmeter, Denkmal, und genau auf die Achse der Lindenallee gesetzt. Vom Teehaus schauen Sie geradewegs hierher.']],
- 'Schlossteich':[
-  ['Der Park','Ein Landschaftspark: nichts steht zufällig. Wiesen, Baumgruppen und der Teich sind so gesetzt, dass sich beim Gehen immer neue Bilder ergeben.'],
-  ['Der Teich','Bei stillem Wetter spiegelt sich das Schloss im Wasser. Früh am Morgen, wenn der Nebel über der Wiese steht, ist das der schönste Blick auf dem ganzen Gut.']],
- 'Jägerhäuser':[
-  ['Die Torhäuser','Zwei kleine Häuser, zusammen nur 84 Quadratmeter, links und rechts der Zufahrt. Wer hier durchfuhr, sollte merken: jetzt beginnt das Gut.'],
-  ['Die Allee','Dahinter führt die Eichenallee mit ihren Laternen weiter zum Hof. Die Feldsteinmauern mit der Ziegelabdeckung setzen die Linie nach beiden Seiten fort.']],
- 'Seehaus':[
-  ['Am See','Das Seehaus liegt ein gutes Stück vom Schloss entfernt am Großen Lankesee, mitten im Wald. Gut 3.400 Quadratmeter, mit Arkaden zur Zufahrtsseite und eigenem Seezugang.'],
-  ['Heute','18 Doppelzimmer, dazu Räume für Feiern. Wer hier heiratet, hat den See vor der Tür und ist trotzdem in wenigen Minuten am Schloss.']]
-};
-const TOPICS_ALLGEMEIN=[
- ['Das Ensemble','Liebenberg ist kein einzelnes Haus, sondern ein ganzes Gut: Schloss, Kirche, Wirtschaftshof, Park, dazu das Seehaus am Lankesee. Fast alles davon steht unter Denkmalschutz.'],
- ['Die Landschaft','Wir sind im Löwenberger Land, rund eine Stunde nördlich von Berlin. Kiefern, Eichen, Seen und Felder – typische Mark Brandenburg.'],
- ['Wohin zuerst?','Wenn Sie wenig Zeit haben: der Schlosshof mit dem Kaiserbrunnen, dann durch den Park zur Lindenallee, und zum Schluss hinüber zum Gutshof mit dem Rinderstall.']];
+// ---- Vier Stimmen, jede mit eigener Sicht auf dieselben Häuser ------------
+const PERSONEN=[
+{ id:'fuehrer', name:'Der Gutsführer', rolle:'Rundgang', farbe:'#6B7A3E', tempo:1.55,
+  coat:0x6B7A3E, trous:0x3b3930, hut:0x4f5c30, hutTyp:'kappe',
+  gruss:'Guten Tag! Ich zeige hier Gästen das Gut. Wir stehen gerade %s.',
+  route:[[6,-10],[14,-18],[40,-18],[62,-14],[104,-10],[110,-20],[146,-18],[150,10],[150,32],
+         [118,36],[80,36],[66,66],[60,95],[10,95],[-5,118],[-5,136],[-5,104],[-2,90],[-16,60],[-16,12],[-14,-6]],
+  themen:{
+   'Kaiserbrunnen':[['Der Name','Der Brunnen erinnert an die Besuche Kaiser Wilhelms II., der hier oft und gern zu Gast war. Seither ist er der Mittelpunkt des Schlosshofs.'],
+     ['Die Haube','Die geschwungene Haube ist aus Kupfer und hat über die Jahrzehnte ihre grüne Patina bekommen. Vier Sandsteinpfeiler tragen sie, unten ist eine Kartusche in den Stein gearbeitet.'],
+     ['Der Hof','Ringsum schließt sich der Hof: das Schloss im Süden, das lange Inspektorenhaus im Norden, die Kirche an der Nordostecke, die Nordische Halle im Osten.']],
+   'Schloss':[['Die Anfänge','Liebenberg wird 1267 zum ersten Mal urkundlich erwähnt. Was Sie hier sehen, ist über Jahrhunderte gewachsen, nicht in einem Zug gebaut worden.'],
+     ['Die Eulenburgs','Das Gut gehörte der Familie zu Eulenburg. Philipp Fürst zu Eulenburg war ein enger Vertrauter Kaiser Wilhelms II. Auch Theodor Fontane hat Liebenberg beschrieben.'],
+     ['Die Architektur','Schauen Sie aufs Dach: Schiefer, darauf Gauben im Wechsel von Dreiecks- und Volutengiebeln. In der Mitte der Hofturm mit Glockenstube, darunter das dreibogige Portal.'],
+     ['Heute','Hotel mit 45 Zimmern, Denkmal, rund 3.900 Quadratmeter Geschossfläche. Träger ist die DKB Stiftung.']],
+   'Feldsteinkirche':[['Der Bau','Unten Feldstein, oben Backstein – daran sehen Sie, dass in zwei Etappen gebaut wurde. Oben schließt ein gezinnter Staffelgiebel ab.'],
+     ['Feldstein','Die Findlinge stammen aus der Eiszeit und lagen auf den Feldern ringsum. Man hat sie gespalten und vermauert – deshalb gleicht keine Feldsteinkirche der anderen.']],
+   'Inspektorenhaus':[['1698','Die Jahreszahl steht schmiedeeisern im Giebel, daneben die S-Anker. Die halten das Gebälk im Mauerwerk – Technik, die man zur Zierde gemacht hat.'],
+     ['Das Haus','Über 2.100 Quadratmeter, Denkmal, Fachwerk an den Längsseiten. Heute ist hier das Museum.']],
+   'Rinderstall':[['Der Stall','Gut 2.280 Quadratmeter unter einem Dach. Heute der große Veranstaltungsort: bis zu 260 Gäste.']],
+   'Gutshof':[['Schloss und Gut','Vorn das Herrenhaus mit Park, dahinter der Wirtschaftshof. Ohne den Hof hätte es das Schloss nie gegeben.']],
+   'Seehaus':[['Am See','Gut 3.400 Quadratmeter am Großen Lankesee, mit Arkaden und eigenem Seezugang. 18 Doppelzimmer.']]},
+  allgemein:[['Das Ensemble','Liebenberg ist kein einzelnes Haus, sondern ein ganzes Gut: Schloss, Kirche, Wirtschaftshof, Park, dazu das Seehaus. Fast alles davon steht unter Denkmalschutz.'],
+   ['Die Landschaft','Wir sind im Löwenberger Land, rund eine Stunde nördlich von Berlin. Kiefern, Eichen, Seen und Felder.'],
+   ['Wohin zuerst?','Wenn Sie wenig Zeit haben: der Hof mit dem Brunnen, dann durch den Park zur Lindenallee, zum Schluss der Gutshof.']]},
+
+{ id:'gaertnerin', name:'Ida, die Gärtnerin', rolle:'Park und Anlagen', farbe:'#7d8f4a', tempo:1.35,
+  coat:0x8b9a56, trous:0x5c5a4a, hut:0xd9c38a, hutTyp:'strohhut', haar:0x6b4a2c, rock:true, geraet:'harke', tall:.96,
+  gruss:'Ach, ein Gast! Ich mache hier den Park. Wir stehen gerade %s.',
+  themen:{
+   'Teehaus':[['Der Blick','Das Häuschen ist mit Absicht so klein. Es geht nicht ums Drinnensein, sondern ums Hinausschauen – deshalb steht es genau am Kopf der Allee.'],
+     ['Was hier wächst','Rundherum halte ich es kurz geschnitten. Sobald etwas hochwächst, ist der Blick weg, und dann hat das Haus keinen Sinn mehr.']],
+   'Lindenhaus':[['Die Achse','Vom Teehaus schauen Sie geradewegs hierher. Zwischen beiden die Linden – das ist keine Bepflanzung, das ist eine gezogene Linie.']],
+   'Schlossteich':[['Im Nebel','Kommen Sie früh, wenn der Nebel über der Wiese steht. Dann spiegelt sich das Schloss im Wasser, und alle bleiben von selbst stehen.'],
+     ['Schilf','Am Rand lasse ich das Schilf stehen. Sieht unordentlich aus, ist aber der beste Platz für alles, was hier brütet und laicht.']],
+   'Schloss':[['Die Terrasse','Zum Park hin liegt die Terrasse mit dem Wintergarten. Die Gräser davor schneide ich erst im Frühjahr – im Winter sind sie das Schönste am ganzen Haus.']],
+   'Schlosspark & Allee':[['Landschaftspark','Nichts steht hier zufällig. Wiesen, Baumgruppen und Wasser sind so gesetzt, dass sich beim Gehen immer neue Bilder ergeben.']]},
+  allgemein:[['Die Linden','Geschnittene Linden muss man jedes Jahr in Form halten, sonst sind sie in fünf Jahren wieder Bäume. Das ist die meiste Arbeit hier.'],
+   ['Die Jahreszeiten','Im Frühjahr ist der Park hell und offen, im Herbst laut und farbig. Wer Liebenberg nur im Sommer kennt, kennt es kaum.'],
+   ['Alte Bäume','Die dicken Eichen sind älter als fast alles Gebaute hier. Um die herum plane ich, nicht umgekehrt.']]},
+
+{ id:'kutscher', name:'Hannes, der Kutscher', rolle:'Gutshof und Gespann', farbe:'#7a5b34', tempo:1.6,
+  coat:0x6b4a2c, trous:0x3a3128, hut:0x2e2a24, hutTyp:'zylinder', geraet:'peitsche',
+  gruss:'Na, auch unterwegs? Ich habe hier mit den Wagen zu tun. Wir stehen gerade %s.',
+  themen:{
+   'Kutscherhaus':[['Die drei Tore','Drei Rundbögen nebeneinander, damit jeder Wagen einzeln heraus kann, ohne dass man rangieren muss. Wer je mit Pferden rückwärts eingeparkt hat, weiß, warum.'],
+     ['1903','Die Zahl steht im Giebel. Sehen Sie die Bögen an: grob behauene Feldsteine als Keile, dazwischen Putz. Das hält, weil jeder Stein den nächsten klemmt.'],
+     ['Oben und unten','Unten die Wagen, oben die Leute. Deshalb die fünf Schornsteine – jede Kammer brauchte ihren eigenen Ofen.']],
+   'Rinderstall':[['Das Vieh','Ein Stall dieser Länge heißt: viele Tiere, viel Futter, viele Wege. Die Tore sitzen so, dass man von außen füttern kann, ohne durch den ganzen Stall zu laufen.']],
+   'Gutshof':[['Ein Arbeitstag','Vor Tag angespannt, Felder, Mühle, Bahnhof, abends zurück. Der Hof war nie leer – heute ist es hier ruhiger als je zuvor.'],
+     ['Die Wege','Kies, kein Pflaster. Leiser für die Tiere, leichter zu flicken, und im Regen läuft das Wasser ab statt zu stehen.']],
+   'Musikscheune':[['Die Scheune','Knapp 500 Quadratmeter, aber sehr hoch – eine Scheune hat eben Luft nach oben. Genau das braucht Musik.']],
+   'Jägerhäuser':[['Die Einfahrt','Zwei Torhäuser, links und rechts. Wer da durchfuhr, sollte merken: jetzt beginnt das Gut. Das war die halbe Miete beim Ankommen.'],
+     ['Die Allee','Dahinter die Eichen. Eine Allee ist nicht nur schön – sie hält im Sommer die Sonne vom Wagen und zeigt bei Nebel, wo der Weg langgeht.']]},
+  allgemein:[['Die Pferde','Ein gutes Gespann kennt den Weg besser als der Kutscher. Man muss es eigentlich nur bremsen.'],
+   ['Wagen','Für Herrschaften die leichte Kutsche, für Rüben der Leiterwagen. Man sieht einem Hof an seinen Wagen an, womit er sein Geld verdient hat.']]},
+
+{ id:'wirtschafterin', name:'Martha, die Wirtschafterin', rolle:'Haus und Hof', farbe:'#1E3560', tempo:1.45,
+  coat:0x4a5a74, trous:0x3a3a42, hut:0xe8e2d4, hutTyp:'tuch', haar:0x3a2a1e, rock:true, geraet:'korb', tall:.97,
+  gruss:'Einen Moment, ich bin gleich bei Ihnen. Wir stehen gerade %s.',
+  themen:{
+   'Kaiserbrunnen':[['Das Wasser','Bevor es Leitungen gab, war dieser Brunnen der Mittelpunkt – nicht aus Schönheit, sondern weil jeder mehrmals am Tag herkommen musste.'],
+     ['Hoher Besuch','Wenn der Kaiser kam, stand der halbe Hof kopf. Zimmer, Küche, Wäsche, Pferde – wochenlange Vorbereitung für ein paar Tage.']],
+   'Schloss':[['Die Gäste','45 Zimmer sind viel Wäsche. Was man von außen als Schloss sieht, ist von innen vor allem Organisation.'],
+     ['Das Portal','Durch die drei Bögen kamen die Gäste herein. Alles andere – Vorräte, Wäsche, Personal – lief über die Hofseite, damit man sich nicht begegnete.']],
+   'Nordische Halle':[['Der Efeu','Im Sommer verschwindet die halbe Wand hinter dem Grün. Schön anzusehen, aber einmal im Jahr muss es von den Fenstern herunter, sonst bekommt man sie nicht mehr auf.']],
+   'Inspektorenhaus':[['Der Inspektor','Der führte die Wirtschaft: Felder, Vieh, Gesinde, Abrechnung. Dass sein Haus den ganzen Hof nach Norden fasst, sagt genug über den Posten.'],
+     ['Der Hirsch','Oben im Giebel das Medaillon mit dem Hirsch. Und darunter die Jahreszahl 1698 – so lange steht das Haus schon hier.']],
+   'Feldsteinkirche':[['Die Glocke','Die Glocke hat den Tag geteilt, nicht die Uhr. Wer auf dem Feld stand, hörte sie – eine Turmuhr sieht man von dort draußen nicht.']],
+   'Gutshof':[['Vorräte','Was der Hof hergab, musste durch den Winter reichen. Eingekellert, eingesalzen, eingekocht – und im Eiskeller lag das Eis vom Teich bis in den Sommer.']]},
+  allgemein:[['Der Hof','Zwischen Schloss und Wirtschaftshof lag eine feine Grenze. Die Gäste sahen den Hof kaum – und ohne ihn hätte es keinen Gast gegeben.'],
+   ['Das Wappentier','Der Hirsch begegnet Ihnen hier öfter. Achten Sie mal auf die Giebel.']]}
+];
 
 function nearestBuilding(x,z){ let best=null,bd=1e9;
-  for(const p of pois){ if(!TOPICS[p.name])continue;
-    const d=Math.hypot(p.x-x,p.z-z); if(d<bd){bd=d;best=p;} }
+  for(const p of pois){ const d=Math.hypot(p.x-x,p.z-z); if(d<bd){bd=d;best=p;} }
   return (best&&bd<52)?best.name:null; }
 
 function openDialog(){
-  if(dialogOpen)return; dialogOpen=true; guideTopic=0;
+  if(dialogOpen||!talkFig)return; dialogOpen=true; guideTopic=0;
   if(document.pointerLockElement)document.exitPointerLock();
-  const where=nearestBuilding(guide.position.x,guide.position.z);
-  const list=where?TOPICS[where]:TOPICS_ALLGEMEIN;
-  document.getElementById('talkWhere').textContent=where?('am '+where):'auf dem Gelände';
-  document.getElementById('talkText').textContent=GUIDE_INTRO.replace('%s',where||'irgendwo auf dem Gut');
+  const F=talkFig, cfg=F.cfg;
+  const where=nearestBuilding(F.obj.position.x,F.obj.position.z);
+  const list=(where&&cfg.themen[where])?cfg.themen[where]:cfg.allgemein;
+  const ortText=(where&&cfg.themen[where])?('am '+where):(where?('am '+where):'auf dem Gelände');
+  document.getElementById('talkName').textContent=cfg.name;
+  document.getElementById('talkWhere').textContent=cfg.rolle+' · '+ortText;
+  document.querySelector('#talk .who .av').style.background=cfg.farbe;
+  document.querySelector('#talk .band').style.background=cfg.farbe;
+  document.getElementById('talkText').textContent=cfg.gruss.replace('%s',ortText);
   const box=document.getElementById('talkTopics'); box.innerHTML='';
   list.forEach((t,i)=>{ const b=document.createElement('button');
     b.innerHTML='<i>'+(i+1)+'</i>'+t[0];
@@ -675,7 +721,7 @@ function init(){
   for(let i=0;i<7;i++)chickens.push(makeChicken(rnd(160,180),rnd(-6,10)));
   deer.push(makeDeer(60,150));deer.push(makeDeer(90,170));
   balloon=makeBalloon();makeClouds();
-  guide=makeGuide();
+  PERSONEN.forEach((c,i)=>{ figures.push({cfg:c,obj:makeFigure(c),wp:1,pause:i*1.4,ph:i*1.7}); });
 
   buildPOIs();
   applyPreset('golden');
@@ -1265,8 +1311,8 @@ function setupInput(){const cv=renderer.domElement;
       const n=parseInt(e.key,10);
       if(n>=1&&n<=9){const b=document.getElementById('talkTopics').children[n-1];if(b)b.click();}
       return;}
-    if(e.code==='KeyF'&&guideNear){openDialog();return;}
-    if(e.code==='KeyE'&&nearPoi&&!guideNear)toggleInfo(nearPoi);
+    if(e.code==='KeyF'&&talkFig){openDialog();return;}
+    if(e.code==='KeyE'&&nearPoi&&!talkFig)toggleInfo(nearPoi);
     if(e.code==='KeyT'){pIdx=(pIdx+1)%pKeys.length;applyPreset(pKeys[pIdx]);}});
   addEventListener('keyup',e=>{keys[e.code]=false;});
   addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
@@ -1275,7 +1321,7 @@ function setupInput(){const cv=renderer.domElement;
   if(TOUCH)setupTouch(cv);
 }
 function doAction(a){
-  if(a==='F'){ if(dialogOpen)closeDialog(); else if(guideNear)openDialog(); return; }
+  if(a==='F'){ if(dialogOpen)closeDialog(); else if(talkFig)openDialog(); return; }
   if(dialogOpen)return;
   if(a==='E'){ if(nearPoi)toggleInfo(nearPoi); else if(infoOpen)toggleInfo(null); return; }
   if(a==='T'){ pIdx=(pIdx+1)%pKeys.length; applyPreset(pKeys[pIdx]); return; }
@@ -1347,7 +1393,9 @@ function update(dt){
   for(const p of pois){const d=Math.hypot(p.x-pos.x,p.z-pos.z);
     if(!p.found&&d<12){p.found=true;foundCount++;updateCounter();showToast(p.name);}
     if(d<14&&d<best){best=d;near=p;}}
-  guideNear = guide ? Math.hypot(guide.position.x-pos.x,guide.position.z-pos.z)<6.5 : false;
+  talkFig = dialogOpen ? talkFig : nearestFigure();
+  const guideNear=!!talkFig;
+  if(talkFig&&!dialogOpen)document.querySelector('#talkPrompt .t').textContent='Mit '+talkFig.cfg.name.replace(/^(Der|Die) /,'')+' sprechen';
   document.getElementById('talkPrompt').style.opacity=(guideNear&&!dialogOpen&&!infoOpen)?1:0;
   if(TOUCH){ const bf=document.getElementById('btnF'), be=document.getElementById('btnE');
     if(bf)bf.classList.toggle('hot',guideNear); if(be)be.classList.toggle('hot',!!near&&!guideNear); }
@@ -1371,7 +1419,7 @@ function animate3d(dt){tAcc+=dt;
   clouds.forEach(s=>{s.position.x+=dt*1.4;if(s.position.x>190)s.position.x=-190;});
   flags.forEach((f,i)=>{f.rotation.z=Math.sin(tAcc*2+i)*0.08;});
   if(water)water.material.metalness=.3+Math.sin(tAcc*.8)*.08;
-  updateGuide(dt);
+  updateFigures(dt);
 }
 function updateCounter(){document.getElementById('counter').firstChild.textContent=foundCount+'\u00A0/\u00A0'+pois.length;}
 const MM=160, MMHALF=250, MMCX=45, MMCZ=-15, MMSCALE=MM/(MMHALF*2);
@@ -1385,8 +1433,8 @@ function drawMinimap(){ if(!mmCtx)return; const g=mmCtx;
     g.fillStyle=area>4000?'rgba(53,86,107,0.62)':'rgba(110,96,72,0.72)'; g.fillRect(x,y,w,h); }
   for(const p of pois){ g.fillStyle=p.found?'#B8924A':'rgba(120,110,90,0.5)';
     g.beginPath(); g.arc(mmX(p.x),mmZ(p.z),2.4,0,7); g.fill(); }
-  if(guide){ g.fillStyle='#B8924A'; g.strokeStyle='#fff'; g.lineWidth=1;
-    g.beginPath(); g.arc(mmX(guide.position.x),mmZ(guide.position.z),3.2,0,7); g.fill(); g.stroke(); }
+  for(const F of figures){ g.fillStyle=F.cfg.farbe; g.strokeStyle='#fff'; g.lineWidth=1;
+    g.beginPath(); g.arc(mmX(F.obj.position.x),mmZ(F.obj.position.z),3.2,0,7); g.fill(); g.stroke(); }
   const px=mmX(pos.x),py=mmZ(pos.z),fx=-Math.sin(yaw),fz=-Math.cos(yaw);
   g.save(); g.translate(px,py); g.rotate(Math.atan2(fx,-fz));
   g.fillStyle='#2f6d3a'; g.strokeStyle='#fff'; g.lineWidth=1;

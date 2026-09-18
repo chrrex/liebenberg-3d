@@ -47,14 +47,26 @@
   #talk .who b{display:block;font-size:17px;color:var(--blau)}
   #talk .who small{color:#8a8a80;font-size:12px;letter-spacing:.04em}
   #talk .kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600}
-  #talk .txt{font-weight:300;font-size:15.5px;line-height:1.68;color:#3a3a34;min-height:84px}
+  #talk .who #talkCount{margin-left:auto;font-size:11px;color:#a8a89e;letter-spacing:.06em;white-space:nowrap}
+  #talkLog{max-height:44vh;overflow-y:auto;padding-right:6px;margin-bottom:4px;scroll-behavior:smooth}
+  #talkLog .me{margin:14px 0 8px auto;max-width:82%;background:var(--blau);color:#fff;font-size:14px;
+    padding:8px 14px;border-radius:14px 14px 4px 14px;width:fit-content;line-height:1.45}
+  #talkLog .them{font-weight:300;font-size:15.5px;line-height:1.68;color:#3a3a34;margin-bottom:6px}
+  #talkLog .them .src{margin-top:7px;font-size:10.5px;letter-spacing:.04em;color:#a09a8c;font-weight:400}
+  #talkLog .them .tipp{margin-top:8px;font-size:13px;color:#7c8a4e;font-style:italic}
+  #talkLog .them+.them{margin-top:12px}
+  #talkFoot{display:flex;gap:10px;align-items:center;margin-top:20px}
+  #talkBack{cursor:pointer;border:1px solid #d8d6cc;background:#fff;color:#6a6a60;font-family:inherit;
+    font-weight:600;font-size:13px;padding:10px 16px;border-radius:30px}
+  #talkBack:hover{border-color:var(--gruen);color:var(--gruen)}
+  #talkTopics button.done{opacity:.5}
   #talkTopics{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
   #talkTopics button{cursor:pointer;border:1px solid #d8d6cc;background:#f7f6f1;color:#3a3a34;font-family:inherit;
     font-size:13.5px;padding:8px 14px;border-radius:30px;transition:.12s}
   #talkTopics button:hover{background:var(--gruen);color:#fff;border-color:var(--gruen)}
   #talkTopics button.on{background:var(--gruen);color:#fff;border-color:var(--gruen)}
   #talkTopics button i{font-style:normal;opacity:.55;margin-right:6px}
-  #talk .close{margin-top:20px;cursor:pointer;border:0;background:var(--blau);color:#fff;font-family:inherit;
+  #talk .close{cursor:pointer;border:0;background:var(--blau);color:#fff;font-family:inherit;
     font-weight:600;font-size:14px;padding:10px 22px;border-radius:30px}
   #crosshair{left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:rgba(255,255,255,.6);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
   #toast{top:78px;left:50%;transform:translateX(-50%) translateY(-14px);opacity:0;transition:.4s;background:var(--gruen);
@@ -112,7 +124,12 @@
     #hint{display:none}
     #info,#talk{width:94vw}
     #talk .body{padding:18px 18px 18px} #info .body{padding:20px 20px 18px}
-    #talk .txt,#info .txt{font-size:14.5px;line-height:1.6}
+    #talkLog .them,#info .txt{font-size:14.5px;line-height:1.6}
+    #talkLog{max-height:38vh}
+    #talkLog .me{font-size:13px;padding:7px 12px}
+    #talkTopics button{font-size:12.5px;padding:7px 12px}
+    #talkFoot{flex-wrap:wrap}
+    #talkBack,#talk .close{font-size:13px;padding:9px 14px}
     #info h3{font-size:20px}
     #prompt,#talkPrompt{top:42%}
     #prompt .t,#talkPrompt .t{font-size:12px}
@@ -125,18 +142,22 @@
 <body>
 <div id="app"></div>
 <div id="crosshair" class="hud"></div>
-<div id="topleft" class="hud"><span id="logoslot"></span><span id="counter">1&nbsp;/&nbsp;13<small>Entdeckt</small></span></div>
+<div id="topleft" class="hud"><span id="logoslot"></span><span id="counter">1&nbsp;/&nbsp;14<small>Entdeckt</small></span></div>
 <canvas id="minimap" class="hud" width="320" height="320"></canvas>
 <div id="topright" class="hud"><b id="presetName">Goldene Stunde</b><br><span>T · Tageszeit wechseln</span></div>
 <div id="prompt" class="hud"><div class="k">E</div><div class="t" id="promptText">Infotafel lesen</div></div>
 <div id="toast" class="hud"></div>
 <div id="talkPrompt" class="hud"><div class="k">F</div><div class="t">Ansprechen</div></div>
 <div id="talk"><div class="band"></div><div class="body">
-  <div class="who"><span class="av"></span><span><b id="talkName"></b><small id="talkWhere"></small></span></div>
-  <div class="txt" id="talkText"></div>
-  <div class="kicker" style="margin-top:18px">Worüber möchten Sie mehr hören?</div>
+  <div class="who"><span class="av"></span><span><b id="talkName"></b><small id="talkWhere"></small></span>
+    <span id="talkCount"></span></div>
+  <div id="talkLog"></div>
+  <div class="kicker" id="talkKicker">Fragen Sie nach</div>
   <div id="talkTopics"></div>
-  <button class="close" id="talkClose">Gespräch beenden</button></div></div>
+  <div id="talkFoot">
+    <button id="talkBack">Andere Frage</button>
+    <button class="close" id="talkClose">Gespräch beenden</button></div>
+</div></div>
 <div id="hint" class="hud"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> gehen · Maus schauen · <kbd>Shift</kbd> rennen · <kbd>Space</kbd> springen · <kbd>E</kbd> Infotafel · <kbd>F</kbd> Leute ansprechen</div>
 <div id="info"><div class="band"></div><div class="body">
   <div class="kicker" id="infoKicker"></div><h3 id="infoTitle"></h3><div class="txt" id="infoText"></div>
@@ -459,7 +480,7 @@ function makeClouds(){const cvs=document.createElement('canvas');cvs.width=cvs.h
     s.scale.set(60+Math.random()*40,26+Math.random()*14,1);s.position.set((Math.random()-.5)*340,64+Math.random()*30,-80-Math.random()*180);scene.add(s);clouds.push(s);}}
 
 // ---- Figuren auf dem Gelände: Route, Auftritt, Gespräch ------------------
-let figures=[], talkFig=null, dialogOpen=false, guideTopic=0;
+let figures=[], talkFig=null, dialogOpen=false;
 
 function nameTag(txt,farbe){
   const pad=16, fs=44;
@@ -573,110 +594,381 @@ function nearestFigure(){ let best=null,bd=6.5;
     if(d<bd){bd=d;best=F;} }
   return best; }
 
-// ---- Vier Stimmen, jede mit eigener Sicht auf dieselben Häuser ------------
+// ---- Vier Stimmen mit Gesprächsbaum -------------------------------------
+// Inhalte belegt aus: Nachhaltigkeitsbericht DKB STIFTUNG 2025 (Q1),
+// schloss-liebenberg.de (Stand Juni 2026) und dem Baubestand vor Ort.
+const Q1='Quelle: Nachhaltigkeitsbericht DKB STIFTUNG 2025';
+
 const PERSONEN=[
-{ id:'fuehrer', name:'Der Gutsführer', rolle:'Rundgang', farbe:'#6B7A3E', tempo:1.55,
+{ id:'fuehrer', name:'Der Gutsführer', rolle:'Rundgang & Geschichte', farbe:'#6B7A3E', tempo:1.55,
   coat:0x6B7A3E, trous:0x3b3930, hut:0x4f5c30, hutTyp:'kappe',
-  gruss:'Guten Tag! Ich zeige hier Gästen das Gut. Wir stehen gerade %s.',
+  gruss:'Guten Tag! Ich zeige hier Gästen das Gut – fragen Sie mich ruhig aus. Wir stehen gerade %s.',
   route:[[6,-10],[14,-18],[40,-18],[62,-14],[104,-10],[110,-20],[146,-18],[150,10],[150,32],
          [118,36],[80,36],[66,66],[60,95],[10,95],[-5,118],[-5,136],[-5,104],[-2,90],[-16,60],[-16,12],[-14,-6]],
-  themen:{
-   'Kaiserbrunnen':[['Der Name','Der Brunnen erinnert an die Besuche Kaiser Wilhelms II., der hier oft und gern zu Gast war. Seither ist er der Mittelpunkt des Schlosshofs.'],
-     ['Die Haube','Die geschwungene Haube ist aus Kupfer und hat über die Jahrzehnte ihre grüne Patina bekommen. Vier Sandsteinpfeiler tragen sie, unten ist eine Kartusche in den Stein gearbeitet.'],
-     ['Der Hof','Ringsum schließt sich der Hof: das Schloss im Süden, das lange Inspektorenhaus im Norden, die Kirche an der Nordostecke, die Nordische Halle im Osten.']],
-   'Schloss':[['Die Anfänge','Liebenberg wird 1267 zum ersten Mal urkundlich erwähnt. Was Sie hier sehen, ist über Jahrhunderte gewachsen, nicht in einem Zug gebaut worden.'],
-     ['Die Eulenburgs','Das Gut gehörte der Familie zu Eulenburg. Philipp Fürst zu Eulenburg war ein enger Vertrauter Kaiser Wilhelms II. Auch Theodor Fontane hat Liebenberg beschrieben.'],
-     ['Die Architektur','Schauen Sie aufs Dach: Schiefer, darauf Gauben im Wechsel von Dreiecks- und Volutengiebeln. In der Mitte der Hofturm mit Glockenstube, darunter das dreibogige Portal.'],
-     ['Heute','Hotel mit 45 Zimmern, Denkmal, rund 3.900 Quadratmeter Geschossfläche. Träger ist die DKB Stiftung.']],
-   'Feldsteinkirche':[['Der Bau','Unten Feldstein, oben Backstein – daran sehen Sie, dass in zwei Etappen gebaut wurde. Oben schließt ein gezinnter Staffelgiebel ab.'],
-     ['Feldstein','Die Findlinge stammen aus der Eiszeit und lagen auf den Feldern ringsum. Man hat sie gespalten und vermauert – deshalb gleicht keine Feldsteinkirche der anderen.']],
-   'Inspektorenhaus':[['1698','Die Jahreszahl steht schmiedeeisern im Giebel, daneben die S-Anker. Die halten das Gebälk im Mauerwerk – Technik, die man zur Zierde gemacht hat.'],
-     ['Das Haus','Über 2.100 Quadratmeter, Denkmal, Fachwerk an den Längsseiten. Heute ist hier das Museum.']],
-   'Rinderstall':[['Der Stall','Gut 2.280 Quadratmeter unter einem Dach. Heute der große Veranstaltungsort: bis zu 260 Gäste.']],
-   'Gutshof':[['Schloss und Gut','Vorn das Herrenhaus mit Park, dahinter der Wirtschaftshof. Ohne den Hof hätte es das Schloss nie gegeben.']],
-   'Seehaus':[['Am See','Gut 3.400 Quadratmeter am Großen Lankesee, mit Arkaden und eigenem Seezugang. 18 Doppelzimmer.']]},
-  allgemein:[['Das Ensemble','Liebenberg ist kein einzelnes Haus, sondern ein ganzes Gut: Schloss, Kirche, Wirtschaftshof, Park, dazu das Seehaus. Fast alles davon steht unter Denkmalschutz.'],
-   ['Die Landschaft','Wir sind im Löwenberger Land, rund eine Stunde nördlich von Berlin. Kiefern, Eichen, Seen und Felder.'],
-   ['Wohin zuerst?','Wenn Sie wenig Zeit haben: der Hof mit dem Brunnen, dann durch den Park zur Lindenallee, zum Schluss der Gutshof.']]},
+  orte:{'Kaiserbrunnen':['g_brunnen','g_kaiser','g_seit'],
+        'Schloss':['g_seit','g_eulenburg','g_denkmal','g_libertas'],
+        'Feldsteinkirche':['g_kirche','g_feldstein','g_trauung'],
+        'Inspektorenhaus':['g_museum','g_1698','g_archiv','g_libertas'],
+        'Nordische Halle':['g_denkmal','g_heute'],
+        'Gutshof':['g_flaeche','g_weihnacht','g_heute'],
+        'Rinderstall':['g_heute','g_denkmal'],
+        'Jägerhäuser':['g_anreise','g_denkmal'],
+        'Seehaus':['g_denkmal','g_heute'],
+        'Teehaus':['g_denkmal','g_flaeche'],
+        'Lindenhaus':['g_denkmal','g_flaeche'],
+        'Schlossteich':['g_flaeche','g_heute']},
+  allgemein:['g_heute','g_flaeche','g_weihnacht','g_kultur','g_ddr','g_anreise'],
+  knoten:{
+   g_seit:{q:'Seit wann steht das Schloss hier?',
+     a:'Liebenberg wird 1267 zum ersten Mal urkundlich erwähnt – das sind über 750 Jahre. Was Sie heute sehen, ist allerdings nicht von damals. Das Haus ist über die Jahrhunderte immer wieder umgebaut und erweitert worden.',
+     f:['g_eulenburg','g_kaiser','g_denkmal']},
+   g_eulenburg:{q:'Wem hat das Gut gehört?',
+     a:'Lange Zeit der Familie zu Eulenburg. Philipp Fürst zu Eulenburg und Hertefeld hat Liebenberg am stärksten geprägt – er war ein enger Vertrauter Kaiser Wilhelms II.',
+     f:['g_kaiser','g_fontane']},
+   g_kaiser:{q:'War der Kaiser wirklich hier?',
+     a:'Ja, Wilhelm II. war oft und gern in Liebenberg. Deshalb steht mitten im Hof der Kaiserbrunnen. Für das Gut bedeutete so ein Besuch allerdings vor allem eins: wochenlange Vorbereitung für ein paar Tage.',
+     f:['g_brunnen','g_fontane'], tipp:'Wie das im Haus ablief, weiß Martha besser als ich.'},
+   g_fontane:{q:'Und Theodor Fontane?',
+     a:'Fontane hat Liebenberg in seinen Wanderungen durch die Mark Brandenburg beschrieben. Wer diese Gegend literarisch kennenlernen will, kommt an ihm nicht vorbei.',
+     f:['g_eulenburg']},
+   g_brunnen:{q:'Was hat es mit dem Brunnen auf sich?',
+     a:'Der Kaiserbrunnen erinnert an die Besuche Wilhelms II. Vier Sandsteinpfeiler tragen eine geschwungene Kupferhaube, die längst grün patiniert ist. Er ist bis heute der Mittelpunkt des Hofs.',
+     f:['g_kaiser','g_seit']},
+   g_denkmal:{q:'Steht das alles unter Denkmalschutz?',
+     a:'Fast das ganze Ensemble: Schloss, Kirche, Inspektorenhaus, Kutscherhaus, Teehaus, Lindenhaus, der Rinderstall, die Jägerhäuser an der Zufahrt und das Seehaus. Das ist Auszeichnung und Aufgabe zugleich – jede Sanierung will abgestimmt sein.',
+     f:['g_heute']},
+   g_heute:{q:'Wer betreibt das Gut heute?',
+     a:'Die DKB STIFTUNG für gesellschaftliches Engagement. Liebenberg ist ihr Wirkungsort: Hotel und Tagungshaus, aber ebenso Bildungsstätte und Inklusionsbetrieb.',
+     f:['g_stiftung','g_flaeche']},
+   g_stiftung:{q:'Was macht die Stiftung hier konkret?',
+     a:'Vier Dinge greifen ineinander: Bildung, Nachhaltigkeit, Inklusion und das kulturelle Erbe. 2025 gab es allein 43 Bildungsveranstaltungen mit 866 Teilnehmenden, dazu kamen 3.536 Gäste zu Kulturveranstaltungen.',
+     src:Q1, f:['g_fuehrungen','g_gruendung','g_kultur'], tipp:'Über die Inklusion im Betrieb kann Ihnen Martha mehr sagen.'},
+   g_flaeche:{q:'Wie groß ist das Gelände eigentlich?',
+     a:'Die Stiftung bewirtschaftet rund 1.400 Hektar, davon 470 Hektar Wald. Das Eigenjagdrevier umfasst sogar 1.900 Hektar. Was Sie hier ablaufen, ist also nur der Kern.',
+     src:Q1, f:['g_stiftung'], tipp:'Zum Wald und zum Park fragen Sie am besten Ida.'},
+   g_fuehrungen:{q:'Gibt es richtige Führungen?',
+     a:'Ja, historische Führungen über das Gelände. 2025 haben daran rund 1.000 Besucherinnen und Besucher teilgenommen. Dazu kommt das Museum im Inspektorenhaus.',
+     src:Q1, f:['g_museum']},
+   g_kirche:{q:'Was ist das für eine Kirche?',
+     a:'Die Feldsteinkirche. Unten Feldstein, oben Backstein mit gezinntem Staffelgiebel – zwei Bauetappen, die man von außen ablesen kann.',
+     f:['g_feldstein','g_trauung']},
+   g_feldstein:{q:'Woher kommen die Steine?',
+     a:'Die Findlinge hat die Eiszeit hiergelassen, sie lagen auf den Feldern ringsum. Man hat sie gespalten und vermauert. Deshalb gleicht in der Mark keine Feldsteinkirche der anderen.',
+     f:['g_kirche']},
+   g_trauung:{q:'Wird dort noch geheiratet?',
+     a:'Kirchlich getraut wird hier nach wie vor, mitten im Ensemble. Daneben gibt es die Libertas-Kapelle und die Eulenburg-Kapelle, standesamtlich wird auch direkt am See getraut.',
+     tipp:'Zum Ablauf einer Hochzeit fragen Sie am besten Martha.'},
+   g_museum:{q:'Was ist im Inspektorenhaus?',
+     a:'Heute das Museum von Schloss & Gut Liebenberg. Früher wohnte hier der Gutsinspektor, der die ganze Wirtschaft führte: Felder, Vieh, Gesinde, Abrechnung.',
+     f:['g_1698']},
+   g_1698:{q:'Was bedeutet die Zahl im Giebel?',
+     a:'1698, das Baujahr, schmiedeeisern angebracht. Die S-förmigen Anker daneben sind keine Zierde – sie halten das Gebälk im Mauerwerk. Man hat die Technik einfach schön gemacht.',
+     f:['g_museum']},
+   g_weihnacht:{q:'Was ist hier im Winter los?',
+     a:'Der Weihnachtsmarkt an den Adventssonntagen, das größte Ereignis im Jahr. 2025 kamen rund 50.000 Menschen. Aufgebaut waren 51 Holzhütten, 700 geschmückte Tannen und 2.000 Meter Lichterketten.',
+     src:Q1, f:['g_tannen']},
+   g_tannen:{q:'Und was passiert danach mit den Tannen?',
+     a:'Die werden gehäckselt und wandern in die Hackschnitzelheizung. Der Baum wärmt also noch, nachdem er geleuchtet hat.',
+     src:Q1},
+   g_gruendung:{q:'Seit wann gibt es die Stiftung?',
+     a:'Seit 2004, gegründet von der Deutschen Kreditbank. Sie kümmert sich um Inklusion, Bildung, Kultur, Denkmalschutz und Gemeinschaft – und richtet ihre Arbeit an den 17 Nachhaltigkeitszielen der Vereinten Nationen aus.',
+     src:Q1, f:['g_heute','g_kultur']},
+   g_kultur:{q:'Gibt es hier auch Kultur?',
+     a:'Und wie. Lesungen, Konzerte, Theater und seit zwei Jahren das Open-Air-Kino im Park. 2025 kamen 3.536 Gäste zu den Kulturveranstaltungen – vieles davon ausdrücklich für die Menschen aus der Region, nicht für ein Publikum aus der Stadt.',
+     src:Q1, f:['g_libertas','g_fuehrungen']},
+   g_libertas:{q:'Gab es hier Widerstand gegen die Nazis?',
+     a:'Ja, und das gehört zu diesem Ort. Libertas Schulze-Boysen, eine Enkelin des Fürsten zu Eulenburg, ist auf Schloss Liebenberg aufgewachsen. Sie gehörte zur Widerstandsgruppe Rote Kapelle und wurde 1942 dafür hingerichtet.',
+     src:Q1, f:['g_eulenburg','g_archiv']},
+   g_archiv:{q:'Was ist von früher erhalten?',
+     a:'Das Museum im Inspektorenhaus, das Lapidarium als Schaudepot und ein historisches Archiv mit Fotos, Akten und Plänen. Unser Kurator sagt: Aus Geschichte entsteht Verantwortung.',
+     src:Q1, f:['g_buecher','g_museum']},
+   g_buecher:{q:'Ist hier je etwas verschwunden?',
+     a:'Eine schöne Frage. Rund 20.000 Bücher aus der Schlossbibliothek, teils aus der Barockzeit, werden bis heute in einem der Toteislöcher auf dem Gelände vermutet. Nach dem Krieg wurden die Löcher als Müllkippen genutzt. Gesucht wird noch.',
+     src:Q1, f:['g_archiv']},
+   g_ddr:{q:'Und was war hier zu DDR-Zeiten?',
+     a:'Liebenberg war einer der größten Wollproduzenten des Landes, mit Zehntausenden Tieren. Von dieser Zeit führt eine direkte Linie zu unseren Schafen heute – nur die Größenordnung ist eine andere.',
+     src:Q1, f:['g_heute'], tipp:'Zu den Schafen fragen Sie Hannes.'},
+   g_anreise:{q:'Wie weit ist es bis Berlin?',
+     a:'50 bis 60 Kilometer, gut 50 Minuten mit dem Auto. Mit der Bahn bis Löwenberg oder Grüneberg, Shuttle auf Anfrage. Und der Löwenberger-Land-Radweg führt direkt hierher.',
+     f:['g_heute']}}},
 
-{ id:'gaertnerin', name:'Ida, die Gärtnerin', rolle:'Park und Anlagen', farbe:'#7d8f4a', tempo:1.35,
+{ id:'gaertnerin', name:'Ida, die Gärtnerin', rolle:'Park, Garten & Natur', farbe:'#7d8f4a', tempo:1.35,
   coat:0x8b9a56, trous:0x5c5a4a, hut:0xd9c38a, hutTyp:'strohhut', haar:0x6b4a2c, rock:true, geraet:'harke', tall:.96,
-  gruss:'Ach, ein Gast! Ich mache hier den Park. Wir stehen gerade %s.',
+  gruss:'Ach, ein Gast! Ich mache hier den Park. Fragen Sie ruhig, ich rede gern über die Arbeit. Wir stehen gerade %s.',
   route:[[-5,70],[-5,108],[-5,140],[16,148],[60,132],[110,126],[160,126],[160,92],[100,88],[40,84],[-2,76]],
-  themen:{
-   'Teehaus':[['Der Blick','Das Häuschen ist mit Absicht so klein. Es geht nicht ums Drinnensein, sondern ums Hinausschauen – deshalb steht es genau am Kopf der Allee.'],
-     ['Was hier wächst','Rundherum halte ich es kurz geschnitten. Sobald etwas hochwächst, ist der Blick weg, und dann hat das Haus keinen Sinn mehr.']],
-   'Lindenhaus':[['Die Achse','Vom Teehaus schauen Sie geradewegs hierher. Zwischen beiden die Linden – das ist keine Bepflanzung, das ist eine gezogene Linie.']],
-   'Schlossteich':[['Im Nebel','Kommen Sie früh, wenn der Nebel über der Wiese steht. Dann spiegelt sich das Schloss im Wasser, und alle bleiben von selbst stehen.'],
-     ['Schilf','Am Rand lasse ich das Schilf stehen. Sieht unordentlich aus, ist aber der beste Platz für alles, was hier brütet und laicht.']],
-   'Schloss':[['Die Terrasse','Zum Park hin liegt die Terrasse mit dem Wintergarten. Die Gräser davor schneide ich erst im Frühjahr – im Winter sind sie das Schönste am ganzen Haus.']],
-   'Schlosspark & Allee':[['Landschaftspark','Nichts steht hier zufällig. Wiesen, Baumgruppen und Wasser sind so gesetzt, dass sich beim Gehen immer neue Bilder ergeben.']]},
-  allgemein:[['Die Linden','Geschnittene Linden muss man jedes Jahr in Form halten, sonst sind sie in fünf Jahren wieder Bäume. Das ist die meiste Arbeit hier.'],
-   ['Die Jahreszeiten','Im Frühjahr ist der Park hell und offen, im Herbst laut und farbig. Wer Liebenberg nur im Sommer kennt, kennt es kaum.'],
-   ['Alte Bäume','Die dicken Eichen sind älter als fast alles Gebaute hier. Um die herum plane ich, nicht umgekehrt.']]},
+  orte:{'Teehaus':['i_teehaus','i_linden','i_gaertnerei'],
+        'Lindenhaus':['i_linden','i_park'],
+        'Schlossteich':['i_teich','i_park','i_alt'],
+        'Schloss':['i_gaertnerei','i_park','i_bienen'],
+        'Gutshof':['i_obst','i_bienen'],
+        'Kaiserbrunnen':['i_gaertnerei','i_jahr']},
+  allgemein:['i_gaertnerei','i_obst','i_bio','i_wald','i_trocken','i_bienen','i_jahr'],
+  knoten:{
+   i_gaertnerei:{q:'Gibt es hier eine eigene Gärtnerei?',
+     a:'Die Schlossgärtnerei, ja. Kräuter und Gemüse für die Küche wachsen hier. Auf unserer Website steht ein Satz, der es gut trifft: Der Lehrling wird mit der Einkaufsliste in den Schlossgarten geschickt.',
+     f:['i_saison','i_obst'], tipp:'Was daraus wird, erzählt Ihnen Martha.'},
+   i_saison:{q:'Was haben Sie gerade?',
+     a:'Das wechselt mit dem Jahr – und genau so kocht die Küche auch, saisonal und regional. Im Frühjahr Kräuter und Salate, im Herbst Kürbis, Kohl und Äpfel.',
+     f:['i_obst','i_jahr']},
+   i_obst:{q:'Was ist mit dem Obst?',
+     a:'Wir haben eine naturbelassene Streuobstwiese, gut einen Hektar groß. 2025 sind davon 2,3 Tonnen Äpfel gekommen, daraus wurden 1.500 Liter Apfelsaft abgefüllt.',
+     src:Q1, f:['i_naturbelassen','i_bienen']},
+   i_naturbelassen:{q:'Warum naturbelassen?',
+     a:'Weil eine Streuobstwiese mehr ist als Obst. Hochstämme, altes Holz, Blüte im Frühjahr – da lebt mehr drin als auf jeder gepflegten Rasenfläche. Wir mähen spät und nie alles auf einmal.',
+     f:['i_obst']},
+   i_bienen:{q:'Halten Sie auch Bienen?',
+     a:'Eigene Stöcke, ja. Der Honig kommt morgens aufs Frühstücksbuffet. Wer wissen will, wie das Jahr war, muss nur den Honig probieren – der schmeckt jedes Jahr anders.',
+     f:['i_obst','i_saison']},
+   i_linden:{q:'Warum sind die Linden so geschnitten?',
+     a:'Damit sie eine Linie bilden. Zwischen Teehaus und Lindenhaus ist das keine Bepflanzung, das ist eine gezogene Achse. Einmal im Jahr muss ich da durch, sonst sind es in fünf Jahren wieder Bäume.',
+     f:['i_teehaus','i_park']},
+   i_teehaus:{q:'Wofür ist das Teehaus da?',
+     a:'Zum Hinausschauen, nicht zum Drinnensein – deshalb ist es so klein. Heute steht dort oft der Sektempfang, wenn im Haus geheiratet wird.',
+     f:['i_linden']},
+   i_park:{q:'Wer hat den Park angelegt?',
+     a:'Es ist ein Landschaftspark, und da steht nichts zufällig. Wiesen, Baumgruppen und Wasser sind so gesetzt, dass sich beim Gehen immer neue Bilder ergeben. Meine Hauptaufgabe ist, die Blicke frei zu halten.',
+     f:['i_teich','i_alt']},
+   i_teich:{q:'Und der Teich?',
+     a:'Kommen Sie früh, wenn der Nebel über der Wiese liegt – dann spiegelt sich das Schloss im Wasser, und alle bleiben von selbst stehen. Das Schilf am Rand lasse ich stehen. Sieht unordentlich aus, ist aber der beste Platz für alles, was hier brütet und laicht.',
+     f:['i_park']},
+   i_alt:{q:'Wie alt sind die Bäume?',
+     a:'Die dicken Eichen sind älter als fast alles Gebaute hier. Um die herum plane ich, nicht umgekehrt.',
+     f:['i_wald']},
+   i_wald:{q:'Gehört der Wald auch dazu?',
+     a:'470 Hektar Wald gehören zur Stiftung, insgesamt sind es rund 1.400 Hektar Fläche. Dazu kommen gut 20 Hektar Rasen und Gelände, die gepflegt werden wollen – das ist ungefähr das, was Sie hier sehen.',
+     src:Q1, f:['i_alt','i_tannen']},
+   i_jahr:{q:'Wann ist es hier am schönsten?',
+     a:'Im Herbst, ohne Frage. Aber fragen Sie mich im Mai noch einmal, dann sage ich Mai. Wer Liebenberg nur im Sommer kennt, kennt es kaum.',
+     f:['i_saison','i_tannen']},
+   i_bio:{q:'Wird hier biologisch gewirtschaftet?',
+     a:'Der Gutsbetrieb ist biozertifiziert. Keine Herbizide, keine Pestizide, Kunstdünger schon gar nicht. Selbst das Plastik für die Siloballen haben wir abgeschafft – das waren zentnerweise Säcke im Jahr.',
+     src:Q1, f:['i_schafe_wiese','i_naturbelassen']},
+   i_schafe_wiese:{q:'Warum laufen Schafe im Park?',
+     a:'Weil sie die besseren Rasenmäher sind. Sie sparen Diesel und Personal, und sie tragen die Pflanzensamen über ihren Kot weiter – das hilft der Artenvielfalt. Und wo kein Mäher fährt, wird auch kein Käfer zerhäckselt.',
+     src:Q1, f:['i_bio'], tipp:'Die Tiere selbst sind Hannes sein Thema.'},
+   i_trocken:{q:'Macht Ihnen die Trockenheit zu schaffen?',
+     a:'Sehr. Die Bäume kämpfen mit sinkenden Grundwasserspiegeln, das sieht man ihnen an. Unser Förster sagt einen Satz, den ich oft im Kopf habe: Im Forst denkt keiner von Jahr zu Jahr, sondern in Dekaden.',
+     src:Q1, f:['i_wald','i_alt']},
+   i_tannen:{q:'Was passiert mit den Weihnachtsbäumen?',
+     a:'Gehäckselt und ab in die Hackschnitzelheizung. Mir gefällt das: Der Baum wärmt noch, nachdem er geleuchtet hat.',
+     src:Q1, f:['i_wald']}}},
 
-{ id:'kutscher', name:'Hannes, der Kutscher', rolle:'Gutshof und Gespann', farbe:'#7a5b34', tempo:1.6,
+{ id:'kutscher', name:'Hannes, der Kutscher', rolle:'Gutshof, Tiere & Jagd', farbe:'#7a5b34', tempo:1.6,
   coat:0x6b4a2c, trous:0x3a3128, hut:0x2e2a24, hutTyp:'zylinder', geraet:'peitsche',
-  gruss:'Na, auch unterwegs? Ich habe hier mit den Wagen zu tun. Wir stehen gerade %s.',
+  gruss:'Na, auch unterwegs? Ich habe hier mit den Wagen und dem Vieh zu tun. Wir stehen gerade %s.',
   route:[[104,-10],[112,-20],[146,-20],[150,30],[118,34],[86,34],[66,10],[66,-14]],
-  themen:{
-   'Kutscherhaus':[['Die drei Tore','Drei Rundbögen nebeneinander, damit jeder Wagen einzeln heraus kann, ohne dass man rangieren muss. Wer je mit Pferden rückwärts eingeparkt hat, weiß, warum.'],
-     ['1903','Die Zahl steht im Giebel. Sehen Sie die Bögen an: grob behauene Feldsteine als Keile, dazwischen Putz. Das hält, weil jeder Stein den nächsten klemmt.'],
-     ['Oben und unten','Unten die Wagen, oben die Leute. Deshalb die fünf Schornsteine – jede Kammer brauchte ihren eigenen Ofen.']],
-   'Rinderstall':[['Das Vieh','Ein Stall dieser Länge heißt: viele Tiere, viel Futter, viele Wege. Die Tore sitzen so, dass man von außen füttern kann, ohne durch den ganzen Stall zu laufen.']],
-   'Gutshof':[['Ein Arbeitstag','Vor Tag angespannt, Felder, Mühle, Bahnhof, abends zurück. Der Hof war nie leer – heute ist es hier ruhiger als je zuvor.'],
-     ['Die Wege','Kies, kein Pflaster. Leiser für die Tiere, leichter zu flicken, und im Regen läuft das Wasser ab statt zu stehen.']],
-   'Musikscheune':[['Die Scheune','Knapp 500 Quadratmeter, aber sehr hoch – eine Scheune hat eben Luft nach oben. Genau das braucht Musik.']],
-   'Jägerhäuser':[['Die Einfahrt','Zwei Torhäuser, links und rechts. Wer da durchfuhr, sollte merken: jetzt beginnt das Gut. Das war die halbe Miete beim Ankommen.'],
-     ['Die Allee','Dahinter die Eichen. Eine Allee ist nicht nur schön – sie hält im Sommer die Sonne vom Wagen und zeigt bei Nebel, wo der Weg langgeht.']]},
-  allgemein:[['Die Pferde','Ein gutes Gespann kennt den Weg besser als der Kutscher. Man muss es eigentlich nur bremsen.'],
-   ['Wagen','Für Herrschaften die leichte Kutsche, für Rüben der Leiterwagen. Man sieht einem Hof an seinen Wagen an, womit er sein Geld verdient hat.']]},
+  orte:{'Kutscherhaus':['h_tore','h_1903','h_bogen'],
+        'Rinderstall':['h_stall','h_jagd','h_drueck'],
+        'Gutshof':['h_huehner','h_ziegen','h_schafe','h_automat','h_wege'],
+        'Musikscheune':['h_stall','h_wege'],
+        'Jägerhäuser':['h_tor','h_kutsche'],
+        'Kaiserbrunnen':['h_kutsche','h_wege'],
+        'Schloss':['h_kutsche','h_jagd']},
+  allgemein:['h_kutsche','h_huehner','h_jagd','h_schafe','h_wolle','h_automat'],
+  knoten:{
+   h_tore:{q:'Warum drei Tore nebeneinander?',
+     a:'Damit jeder Wagen einzeln heraus kann, ohne dass man rangieren muss. Wer je mit Pferden rückwärts eingeparkt hat, weiß, warum.',
+     f:['h_1903','h_bogen']},
+   h_1903:{q:'Wie alt ist das Kutscherhaus?',
+     a:'1903, die Zahl steht im Giebel. Unten die Wagen, oben die Leute – daher die fünf Schornsteine, jede Kammer brauchte ihren eigenen Ofen. Heute sind in den Räumen Ateliers.',
+     f:['h_bogen','h_kutsche']},
+   h_bogen:{q:'Was sind das für Steine in den Bögen?',
+     a:'Grob behauene Feldsteine als Keile. Das hält, weil jeder Stein den nächsten klemmt, ganz ohne Stahl. Darüber Putz, die Fenster oben mit roten Ziegeln gerahmt.',
+     f:['h_tore']},
+   h_huehner:{q:'Was sind das für Hühner?',
+     a:'450 Legehennen laufen hier. 2025 sind daraus 93.434 verkaufte Eier geworden – und die, die Sie morgens auf dem Frühstücksteller haben, kommen von genau diesen Tieren.',
+     src:Q1, f:['h_freilauf','h_schafe']},
+   h_freilauf:{q:'Laufen die frei?',
+     a:'Freilauf, ja, das Gehege sehen Sie drüben. Ein Huhn, das den ganzen Tag scharren darf, ist ein anderes Tier als eines im Stall. Das schmeckt man nicht unbedingt – aber man sieht es.',
+     f:['h_huehner']},
+   h_schafe:{q:'Und die Schafe?',
+     a:'33 Merinofleischschafe, dazu drei Ziegen. Die halten Flächen kurz, auf die kein Mäher kommt.',
+     src:Q1, f:['h_pullover','h_huehner']},
+   h_pullover:{q:'Was passiert mit der Wolle?',
+     a:'Daraus ist ein Bildungsprogramm geworden: Vom Schaf zum Pullover. 2025 haben 176 Kinder und Jugendliche mitgemacht, von der Schur bis zum fertigen Garn.',
+     src:Q1, f:['h_schafe']},
+   h_jagd:{q:'Wird hier gejagt?',
+     a:'Das Eigenjagdrevier umfasst 1.900 Hektar. Pro Saison werden rund 300 Stück Schalenwild erlegt, das ergibt etwa sechs Tonnen Wildbret im Jahr.',
+     src:Q1, f:['h_wild']},
+   h_wild:{q:'Wo landet das Wild?',
+     a:'In der eigenen Küche. Wild aus dem eigenen Revier steht auf der Karte, verarbeitet wird hier auf dem Gut. Kürzere Wege gibt es nicht.',
+     f:['h_verwertung','h_jagd'], tipp:'Was die Küche daraus macht, erzählt Ihnen Martha.'},
+   h_stall:{q:'Wofür ist der große Stall heute da?',
+     a:'Der historische Rinderstall ist heute der große Veranstaltungsort: 360 Quadratmeter, bis zu 260 Gäste. Wo früher das Vieh stand, wird heute getagt und gefeiert.',
+     f:['h_wege']},
+   h_kutsche:{q:'Fahren Sie noch Kutsche?',
+     a:'Für Gäste, ja. Eine Kutschfahrt gehört zum Rahmenprogramm, gerade bei Hochzeiten. Ein gutes Gespann kennt den Weg übrigens besser als der Kutscher – man muss es eigentlich nur bremsen.',
+     f:['h_wege','h_tor']},
+   h_wege:{q:'Warum Kies und kein Pflaster?',
+     a:'Leiser für die Tiere, leichter zu flicken, und bei Regen läuft das Wasser ab, statt zu stehen.',
+     f:['h_kutsche']},
+   h_drueck:{q:'Wie läuft so eine Jagd ab?',
+     a:'Neben der Einzeljagd gibt es drei Drückjagden im Jahr. Da sind jeweils rund 25 Jägerinnen und Jäger zwei Tage hier, wohnen im Hotel und sitzen ansonsten im Forst auf den Hochsitzen.',
+     src:Q1, f:['h_wild','h_jagd']},
+   h_verwertung:{q:'Wird wirklich alles verwertet?',
+     a:'Darauf legen wir Wert. Ein regionaler Fleischer macht daraus Wildschinken, Wildsalami, Knacker, Bratwurst und Leberwurst – mit so wenig Konservierungsstoffen wie nötig. Selbst die Knochen gehen noch in den Wildfond.',
+     src:Q1, f:['h_wild']},
+   h_ziegen:{q:'Wozu sind die Ziegen gut?',
+     a:'Die stehen bei den Hühnern als Herdenschutz. Greifvögel holen sich sonst schon mal fünf Tiere in der Woche. Ob die Rechnung aufgeht, sehen wir noch – im Winter waren die Hühner wenig draußen.',
+     src:Q1, f:['h_huehner','h_schafe']},
+   h_automat:{q:'Wo kann man die Eier kaufen?',
+     a:'Hier auf dem Gut – und, was viele nicht glauben, per Automat in der Berliner Zentrale unserer Stifterin. Die Eier sind in beiden Küchen beliebt, bei den Mitarbeitenden und bei externen Kunden.',
+     src:Q1, f:['h_huehner','h_bruderhahn']},
+   h_bruderhahn:{q:'Was ist mit den männlichen Küken?',
+     a:'Genau das treibt uns um. Es gibt den Plan, ein Bruderhahn-Projekt zu starten, damit die Hähne nicht aussortiert werden. Entschieden ist es noch nicht, aber wir sind zuversichtlich.',
+     src:Q1, f:['h_huehner']},
+   h_wolle:{q:'Gab es hier früher mehr Tiere?',
+     a:'Und ob. Zu DDR-Zeiten war Liebenberg einer der größten Wollproduzenten, mit Zehntausenden Schafen. Heute sind es 33 – aber die haben dafür Namen und einen ganzen Bildungsauftrag am Hals.',
+     src:Q1, f:['h_pullover','h_schafe']},
+   h_tor:{q:'Was sind das für Häuschen an der Zufahrt?',
+     a:'Die Jägerhäuser, zusammen keine 90 Quadratmeter. Wer da durchfuhr, sollte merken: Jetzt beginnt das Gut. Dahinter führt die Eichenallee zum Hof.',
+     f:['h_kutsche']}}},
 
-{ id:'wirtschafterin', name:'Martha, die Wirtschafterin', rolle:'Haus und Hof', farbe:'#1E3560', tempo:1.45,
+{ id:'wirtschafterin', name:'Martha, die Wirtschafterin', rolle:'Haus, Küche & Gäste', farbe:'#1E3560', tempo:1.45,
   coat:0x4a5a74, trous:0x3a3a42, hut:0xe8e2d4, hutTyp:'tuch', haar:0x3a2a1e, rock:true, geraet:'korb', tall:.97,
-  gruss:'Einen Moment, ich bin gleich bei Ihnen. Wir stehen gerade %s.',
+  gruss:'Einen Moment, ich bin gleich bei Ihnen. Fragen Sie ruhig – wir stehen gerade %s.',
   route:[[22,-14],[40,-18],[52,-6],[52,20],[52,36],[68,38],[68,62],[20,66],[0,66],[-18,54],[-18,10],[-14,-6],[6,-10],[14,-18]],
-  themen:{
-   'Kaiserbrunnen':[['Das Wasser','Bevor es Leitungen gab, war dieser Brunnen der Mittelpunkt – nicht aus Schönheit, sondern weil jeder mehrmals am Tag herkommen musste.'],
-     ['Hoher Besuch','Wenn der Kaiser kam, stand der halbe Hof kopf. Zimmer, Küche, Wäsche, Pferde – wochenlange Vorbereitung für ein paar Tage.']],
-   'Schloss':[['Die Gäste','45 Zimmer sind viel Wäsche. Was man von außen als Schloss sieht, ist von innen vor allem Organisation.'],
-     ['Das Portal','Durch die drei Bögen kamen die Gäste herein. Alles andere – Vorräte, Wäsche, Personal – lief über die Hofseite, damit man sich nicht begegnete.']],
-   'Nordische Halle':[['Der Efeu','Im Sommer verschwindet die halbe Wand hinter dem Grün. Schön anzusehen, aber einmal im Jahr muss es von den Fenstern herunter, sonst bekommt man sie nicht mehr auf.']],
-   'Inspektorenhaus':[['Der Inspektor','Der führte die Wirtschaft: Felder, Vieh, Gesinde, Abrechnung. Dass sein Haus den ganzen Hof nach Norden fasst, sagt genug über den Posten.'],
-     ['Der Hirsch','Oben im Giebel das Medaillon mit dem Hirsch. Und darunter die Jahreszahl 1698 – so lange steht das Haus schon hier.']],
-   'Feldsteinkirche':[['Die Glocke','Die Glocke hat den Tag geteilt, nicht die Uhr. Wer auf dem Feld stand, hörte sie – eine Turmuhr sieht man von dort draußen nicht.']],
-   'Gutshof':[['Vorräte','Was der Hof hergab, musste durch den Winter reichen. Eingekellert, eingesalzen, eingekocht – und im Eiskeller lag das Eis vom Teich bis in den Sommer.']]},
-  allgemein:[['Der Hof','Zwischen Schloss und Wirtschaftshof lag eine feine Grenze. Die Gäste sahen den Hof kaum – und ohne ihn hätte es keinen Gast gegeben.'],
-   ['Das Wappentier','Der Hirsch begegnet Ihnen hier öfter. Achten Sie mal auf die Giebel.']]}
+  orte:{'Schloss':['m_zimmer','m_kueche','m_hof'],
+        'Kaiserbrunnen':['m_hof','m_ink','m_zimmer'],
+        'Nordische Halle':['m_tagung','m_raum'],
+        'Seehaus':['m_seehaus','m_hochzeit'],
+        'Rinderstall':['m_raum','m_tagung'],
+        'Gutshof':['m_frei','m_weihnacht','m_ink'],
+        'Feldsteinkirche':['m_hochzeit','m_rahmen'],
+        'Inspektorenhaus':['m_ink','m_werk','m_atelier'],
+        'Kutscherhaus':['m_atelier','m_werk'],
+        'Teehaus':['m_rahmen','m_hochzeit'],
+        'Musikscheune':['m_tagung','m_wasjahr']},
+  allgemein:['m_zimmer','m_ink','m_kueche','m_tagung','m_weihnacht','m_frei'],
+  knoten:{
+   m_zimmer:{q:'Wie viele Zimmer hat das Haus?',
+     a:'45 im Schloss, dazu 18 Doppelzimmer im Seehaus – zusammen 63. Unter der Woche sind das meist Tagungsgäste, am Wochenende Hochzeitsgesellschaften.',
+     f:['m_seehaus','m_gast']},
+   m_seehaus:{q:'Was ist das Seehaus?',
+     a:'Ein eigenes Haus am See, ein paar hundert Meter vom Schloss. 18 Doppelzimmer, Kaminzimmer, Terrasse mit eigenem Seezugang. Viele buchen es ganz – für eine Hochzeit oder ein Offsite.',
+     f:['m_hochzeit','m_zimmer']},
+   m_gast:{q:'Wer kommt hierher?',
+     a:'Unter der Woche Tagungsgäste, am Wochenende Hochzeiten und Feiern. Regelmäßig zu Gast sind die Helmholtz-Gemeinschaft, Nachwuchsführungskräfte großer Unternehmen und Spitzensportler.',
+     f:['m_tagung','m_hochzeit']},
+   m_tagung:{q:'Kann man hier tagen?',
+     a:'Elf Tagungsräume auf dem Gelände, verteilt auf Schloss, Seehaus, Gutshof und Jagdtrainingszentrum. Alle mit Tageslicht – das ist hier keine Selbstverständlichkeit, sondern Bedingung.',
+     f:['m_raum','m_green']},
+   m_raum:{q:'Welcher ist der größte Raum?',
+     a:'Der historische Rinderstall mit 360 Quadratmetern und bis zu 260 Personen. Im Schloss ist es der Schlosssaal, dazu kommen die beiden Nordischen Hallen.',
+     f:['m_tagung']},
+   m_green:{q:'Was ist ein Green Meeting?',
+     a:'Kurz gesagt: tagen, ohne dass hinterher ein Berg Müll steht. Kurze Wege beim Essen, Mehrweg, Technik statt Papierbergen – und ein Haus, das ohnehin vieles selbst erzeugt.',
+     f:['m_kueche','m_ink']},
+   m_ink:{q:'Stimmt es, dass hier ein Inklusionsbetrieb ist?',
+     a:'Ja, und das ist kein Nebensatz. Von den 122 Mitarbeitenden auf Schloss & Gut Liebenberg haben 22 Prozent eine Behinderung. Im Hotel selbst arbeiten 12 von 77 Mitarbeitenden mit Handicap.',
+     src:Q1, f:['m_ink2','m_werk']},
+   m_ink2:{q:'In welchen Bereichen arbeiten sie?',
+     a:'Vor allem in Küche und Housekeeping, dort liegt der Anteil bei 16 Prozent. Im Inklusionsunternehmen der Stiftung sind es sogar 51 Prozent. Die Stiftungsgruppe gehört zu den inklusionsstärksten Arbeitgebern Brandenburgs.',
+     src:Q1, f:['m_gebaerden','m_werk']},
+   m_werk:{q:'Gibt es eigene Werkstätten?',
+     a:'Holz und Metall, bis hin zu eigenen Möbeln. Manches, worauf Sie hier sitzen, ist auf dem Gut entstanden.',
+     f:['m_ink']},
+   m_kueche:{q:'Woher kommt das Essen?',
+     a:'So viel wie möglich von hier: Kräuter und Gemüse aus der Schlossgärtnerei, Eier aus eigener Haltung, Honig aus eigenen Stöcken, Wild aus dem eigenen Revier und Fisch aus den Seen ringsum.',
+     f:['m_restaurant','m_green'], tipp:'Nach dem Garten fragen Sie Ida, nach dem Wild Hannes.'},
+   m_restaurant:{q:'Wie groß ist das Restaurant?',
+     a:'Bis zu 100 Gäste, dazu die Schlossterrasse mit Parkblick, wenn das Wetter mitspielt. Unverträglichkeiten und Diätwünsche gehen immer – man muss es uns nur vorher sagen.',
+     f:['m_kueche']},
+   m_hochzeit:{q:'Kann man hier heiraten?',
+     a:'Von 30 bis 150 Gästen, je nach Ort. Standesamtlich direkt am See oder kirchlich in der Feldsteinkirche. Übernachten können 120 bis 130 Gäste.',
+     f:['m_rahmen','m_seehaus']},
+   m_rahmen:{q:'Was kann man drumherum machen?',
+     a:'Kutschfahrt, historische Schlossführung, Schatzsuche für die Kinder, Feuerwerk. Und der Sektempfang steht gern vor dem Teehaus.',
+     f:['m_hochzeit']},
+   m_frei:{q:'Was gibt es für Gäste sonst noch?',
+     a:'Die Fitnessscheune mit Sauna, für Hausgäste kostenfrei. Den Gutshofladen mit Café und regionalen Produkten. Und das Museum im Inspektorenhaus.',
+     f:['m_wasjahr']},
+   m_wasjahr:{q:'Was ist hier das größte Ereignis?',
+     a:'Der Weihnachtsmarkt an den Adventssonntagen, 2025 mit rund 50.000 Besuchern. Dazu der KulturSommer im Juli und August, das Freiluftkino an Sommerabenden und der Sonntagsbrunch am ersten Sonntag im Monat.',
+     src:Q1, f:['m_frei','m_gast']},
+   m_gebaerden:{q:'Wie verständigen Sie sich untereinander?',
+     a:'Mit Händen, Füßen und zunehmend in Gebärdensprache. Es gibt Kurse für hörende Kolleginnen und Kollegen, Dolmetscherinnen bei Teammeetings – und das Gebärdensprachfrühstück: Eine Stunde lang wird nur gebärdet. Für die Hörenden ist das ein echter Perspektivwechsel.',
+     src:Q1, f:['m_ink2','m_verein']},
+   m_verein:{q:'Ist das verbindlich geregelt?',
+     a:'Seit 2021 gibt es eine Inklusionsvereinbarung, die alle zwei Jahre fortgeschrieben wird. Darin stehen konkrete Maßnahmen, die jährlich ausgewertet werden – Materialien in leichter Sprache, Brandschutzkonzepte für gehörlose Mitarbeitende, ergonomische Arbeitsplätze.',
+     src:Q1, f:['m_ink','m_lernen']},
+   m_lernen:{q:'Bilden Sie Ihre Leute weiter?',
+     a:'2025 waren es 34 Weiterbildungen mit zusammen 964 Stunden. Das reicht von Kommunikation über Projektmanagement bis zu Führungskräfteseminaren.',
+     src:Q1, f:['m_ink']},
+   m_atelier:{q:'Was ist das Atelier?',
+     a:'Früher Schneiderei, dann Maschinenraum, zuletzt ein trostloser Besprechungsraum. Das haben die eigenen Gewerke umgebaut, fast alles in Eigenregie – die Möbel aus Holz des eigenen Waldes. Heute ist es Schulungsraum, auch für externe Kunden.',
+     src:Q1, f:['m_werk']},
+   m_weihnacht:{q:'Wie stemmen Sie den Weihnachtsmarkt?',
+     a:'Alle 120 Mitarbeitenden mit und ohne Behinderung arbeiten Hand in Hand. Im September fangen die ersten an, die 51 Holzhütten aufzubauen. Dazu 700 geschmückte Tannen, bis zu 2.000 Meter Lichterketten und 80 selbst gebundene Gestecke.',
+     src:Q1, f:['m_tannen','m_wasjahr']},
+   m_tannen:{q:'Und danach?',
+     a:'Die Tannen sind keine Verkaufsware. Anwohner und Mitarbeitende können sie hinterher für fünf Euro mitnehmen, der Rest kommt in den Häcksler und heizt uns über die Hackschnitzelheizung ein.',
+     src:Q1, f:['m_weihnacht']},
+   m_hof:{q:'Wie war das früher im Haus?',
+     a:'Zwischen Schloss und Wirtschaftshof lag eine feine Grenze. Die Gäste kamen durchs Portal, alles andere – Vorräte, Wäsche, Personal – lief über den Hof, damit man sich nicht begegnete.',
+     f:['m_ink','m_zimmer']}}}
 ];
 
 function nearestBuilding(x,z){ let best=null,bd=1e9;
   for(const p of pois){ const d=Math.hypot(p.x-x,p.z-z); if(d<bd){bd=d;best=p;} }
   return (best&&bd<52)?best.name:null; }
 
+// ---- Gesprächsführung ----------------------------------------------------
+let talkCfg=null, talkEntry=[], talkAsked=null, talkN=0;
+
+function dlgSay(frage,knoten){
+  const log=document.getElementById('talkLog');
+  if(frage){ const q=document.createElement('div'); q.className='me'; q.textContent=frage; log.appendChild(q); }
+  const a=document.createElement('div'); a.className='them'; a.textContent=knoten.a;
+  if(knoten.tipp){ const t=document.createElement('div'); t.className='tipp'; t.textContent=knoten.tipp; a.appendChild(t); }
+  if(knoten.src){ const s2=document.createElement('div'); s2.className='src'; s2.textContent=knoten.src; a.appendChild(s2); }
+  log.appendChild(a); log.scrollTop=log.scrollHeight;
+}
+function dlgChips(ids){
+  const box=document.getElementById('talkTopics'); box.innerHTML='';
+  ids.forEach((id,i)=>{ const n=talkCfg.knoten[id]; if(!n)return;
+    const b=document.createElement('button');
+    b.innerHTML='<i>'+(i+1)+'</i>'+n.q;
+    if(talkAsked.has(id))b.className='done';
+    b.onclick=()=>dlgAsk(id);
+    box.appendChild(b); });
+}
+function dlgAsk(id){
+  const n=talkCfg.knoten[id]; if(!n)return;
+  talkAsked.add(id); talkN++;
+  document.getElementById('talkCount').textContent=talkN+(talkN===1?' Frage':' Fragen');
+  dlgSay(n.q,n);
+  const weiter=(n.f||[]).filter(x=>talkCfg.knoten[x]);
+  if(weiter.length){ document.getElementById('talkKicker').textContent='Nachfragen'; dlgChips(weiter); }
+  else { document.getElementById('talkKicker').textContent='Fragen Sie nach'; dlgChips(talkEntry.filter(x=>x!==id)); }
+  const log=document.getElementById('talkLog');
+  setTimeout(()=>{ log.scrollTop=log.scrollHeight; },30);
+}
+function dlgZurueck(){
+  document.getElementById('talkKicker').textContent='Fragen Sie nach';
+  dlgChips(talkEntry);
+}
 function openDialog(){
-  if(dialogOpen||!talkFig)return; dialogOpen=true; guideTopic=0;
+  if(dialogOpen||!talkFig)return; dialogOpen=true;
   if(document.pointerLockElement)document.exitPointerLock();
-  const F=talkFig, cfg=F.cfg;
+  talkCfg=talkFig.cfg; talkAsked=new Set(); talkN=0;
+  const F=talkFig, cfg=talkCfg;
   const where=nearestBuilding(F.obj.position.x,F.obj.position.z);
-  const list=(where&&cfg.themen[where])?cfg.themen[where]:cfg.allgemein;
-  const ortText=(where&&cfg.themen[where])?('am '+where):(where?('am '+where):'auf dem Gelände');
+  const liste=(where&&cfg.orte[where])?cfg.orte[where]:null;
+  talkEntry=(liste||cfg.allgemein).slice();
+  // allgemeine Fragen immer zusätzlich anbieten
+  cfg.allgemein.forEach(id=>{ if(talkEntry.indexOf(id)<0)talkEntry.push(id); });
+  const ortText=where?('am '+where):'auf dem Gelände';
   document.getElementById('talkName').textContent=cfg.name;
   document.getElementById('talkWhere').textContent=cfg.rolle+' · '+ortText;
+  document.getElementById('talkCount').textContent='';
   document.querySelector('#talk .who .av').style.background=cfg.farbe;
   document.querySelector('#talk .band').style.background=cfg.farbe;
-  document.getElementById('talkText').textContent=cfg.gruss.replace('%s',ortText);
-  const box=document.getElementById('talkTopics'); box.innerHTML='';
-  list.forEach((t,i)=>{ const b=document.createElement('button');
-    b.innerHTML='<i>'+(i+1)+'</i>'+t[0];
-    b.onclick=()=>pickTopic(list,i);
-    box.appendChild(b); });
+  const log=document.getElementById('talkLog'); log.innerHTML='';
+  dlgSay(null,{a:cfg.gruss.replace('%s',ortText)});
+  document.getElementById('talkKicker').textContent='Fragen Sie nach';
+  dlgChips(talkEntry);
   document.getElementById('talk').classList.add('show');
-}
-function pickTopic(list,i){
-  const btns=document.getElementById('talkTopics').children;
-  for(let k=0;k<btns.length;k++)btns[k].classList.toggle('on',k===i);
-  document.getElementById('talkText').textContent=list[i][1];
 }
 function closeDialog(){ if(!dialogOpen)return; dialogOpen=false;
   document.getElementById('talk').classList.remove('show');
@@ -1321,6 +1613,7 @@ function buildPOIs(){
   addPoi('Rinderstall','07 · Denkmal',107,-22,'Der historische Rinderstall am Gutshof: 2.281 m² unter einem Dach, heute Bühne für Tagungen und Feste mit bis zu 260 Gästen.');
   addPoi('Gutshof','Veranstaltungsfläche',110,10,'Der weite Gutshof mit Veranstaltungsfläche, Fitness-Scheune, Stall und Streichelzoo, Freilaufgehege und dem langen Garagenriegel.');
   addPoi('Musikscheune','13 · Denkmal',222,6,'Am Ostende des Guts die Musikscheune – 495 m², 3.683 m³ Rauminhalt. Daneben Scheune 9 und die Hochgaragen.');
+  addPoi('Kutscherhaus','04 · Denkmal',103,57,'Das Kutscherhaus von 1903: drei Rundbogen-Einfahrten mit Feldsteinkeilen, darüber Wohnkammern – daher die fünf hohen Schornsteine. Heute sind hier Ateliers untergebracht.');
   addPoi('Teehaus','09 · Denkmal',-12,102,'Nur 61 m² – das kleinste Denkmal im Park, am Kopf der Lindenallee. Beliebt für den Sektempfang, wenn die Sonne über die Wiese wandert.');
   addPoi('Lindenhaus','08 · Denkmal',0,158,'Am südlichen Ende der Lindenallee steht das Lindenhaus mit 458 m². Dazwischen die doppelte Reihe geschnittener Linden.');
   addPoi('Schlossteich','18 · Parkflächen',143,112,'Der Schlossteich im Schlosspark. Draußen und drinnen: alles Natur – nachhaltig, regional, fühlbar.');
@@ -1336,6 +1629,7 @@ function setupInput(){const cv=renderer.domElement;
   addEventListener('keydown',e=>{keys[e.code]=true;
     if(dialogOpen){
       if(e.code==='Escape'){closeDialog();return;}
+      if(e.code==='Backspace'){e.preventDefault();dlgZurueck();return;}
       const n=parseInt(e.key,10);
       if(n>=1&&n<=9){const b=document.getElementById('talkTopics').children[n-1];if(b)b.click();}
       return;}
@@ -1346,6 +1640,7 @@ function setupInput(){const cv=renderer.domElement;
   addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
   document.getElementById('infoClose').onclick=()=>toggleInfo(null);
   document.getElementById('talkClose').onclick=()=>closeDialog();
+  document.getElementById('talkBack').onclick=()=>dlgZurueck();
   if(TOUCH)setupTouch(cv);
 }
 function doAction(a){
